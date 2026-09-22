@@ -1,0 +1,48 @@
+{# auditor/audit.html - MODULE A: Internal Auditor / IPID Officer full searchable audit trail #}
+{% extends "base.html" %}
+{% from "_macros.html" import audit_table, pagination %}
+{% set layout = 'app' %}
+{% set active = 'audit' %}
+{% block title %}Audit trail{% endblock %}
+{% block page_title %}Audit trail{% endblock %}
+
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>Audit trail</h1>
+    <p class="muted">Every important action: who did it, what they did, on which case, and when. Entries cannot be edited or deleted - this is the same immutable ledger reviewed for IPID / internal-audit purposes.</p>
+  </div>
+</div>
+
+<form method="get" action="{{ url_for('auditor_audit') }}" class="filter-bar">
+  <div class="field">
+    <label for="q">Case reference</label>
+    <input type="search" id="q" name="q" value="{{ reference }}" placeholder="e.g. SAPS-2026">
+  </div>
+  <div class="field">
+    <label for="user">User</label>
+    <select id="user" name="user">
+      <option value="">All users</option>
+      {% for u in users %}
+        <option value="{{ u.id }}" {% if user_filter == u.id|string %}selected{% endif %}>{{ u.full_name }} ({{ u.role_label }})</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="field">
+    <label for="action">Action</label>
+    <select id="action" name="action">
+      <option value="">All actions</option>
+      {% for a in actions %}
+        <option value="{{ a }}" {% if action_filter == a %}selected{% endif %}>{{ a|replace('_', ' ')|title }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <button type="submit" class="btn btn-primary">Apply filters</button>
+  <a class="btn btn-ghost" href="{{ url_for('auditor_audit') }}">Clear</a>
+</form>
+
+<section class="panel panel-flush">
+  {{ audit_table(pager.items, show_case=True) }}
+</section>
+{{ pagination(pager, 'auditor_audit', filters) }}
+{% endblock %}
