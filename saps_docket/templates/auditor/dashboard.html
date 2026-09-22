@@ -1,0 +1,75 @@
+{# auditor/dashboard.html - MODULE A: Internal Auditor / IPID Officer read-only oversight #}
+{% extends "base.html" %}
+{% from "_macros.html" import audit_table %}
+{% set layout = 'app' %}
+{% set active = 'dashboard' %}
+{% block title %}Auditor dashboard{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>Oversight overview</h1>
+    <p class="muted">Read-only view of every case, audit entry and non-registration record. Nothing on this account can be changed, assigned or deleted.</p>
+  </div>
+  <a class="btn btn-primary" href="{{ url_for('auditor_audit') }}">Open full audit trail</a>
+</div>
+
+<section class="stat-grid" aria-label="Station-wide summary">
+  <a class="stat" href="{{ url_for('auditor_cases') }}">
+    <span class="stat-number">{{ stats.total }}</span><span class="stat-label">Total cases</span>
+  </a>
+  <a class="stat stat-open" href="{{ url_for('auditor_cases', status='OPEN') }}">
+    <span class="stat-number">{{ stats.open }}</span><span class="stat-label">Open</span>
+  </a>
+  <a class="stat stat-investigating" href="{{ url_for('auditor_cases', status='UNDER INVESTIGATION') }}">
+    <span class="stat-number">{{ stats.investigating }}</span><span class="stat-label">Under investigation</span>
+  </a>
+  <a class="stat stat-closed" href="{{ url_for('auditor_cases', status='CLOSED') }}">
+    <span class="stat-number">{{ stats.closed }}</span><span class="stat-label">Closed</span>
+  </a>
+  <a class="stat stat-attention" href="{{ url_for('auditor_cases') }}">
+    <span class="stat-number">{{ stats.escalated }}</span><span class="stat-label">Pending escalations</span>
+  </a>
+  <a class="stat" href="{{ url_for('auditor_refusals') }}">
+    <span class="stat-number">{{ stats.refusals }}</span><span class="stat-label">Non-registrations</span>
+  </a>
+</section>
+
+<div class="two-col">
+  <section class="panel" aria-labelledby="integrity-heading">
+    <h2 id="integrity-heading">Trail integrity</h2>
+    <p class="muted small">These figures come straight from the immutable audit log - nothing here can have been edited or deleted after the fact.</p>
+    <dl class="kv kv-grid">
+      <div><dt>Total audit entries</dt><dd>{{ stats.audit_entries }}</dd></div>
+      <div><dt>Access-denied attempts logged</dt><dd>{{ access_denied_count }}</dd></div>
+    </dl>
+  </section>
+
+  <section class="panel" aria-labelledby="refusals-heading">
+    <h2 id="refusals-heading">Most recent non-registrations</h2>
+    {% if recent_refusals %}
+    <ul class="item-list">
+      {% for r in recent_refusals %}
+      <li>
+        <div>
+          <div>{{ r.reference }} &ndash; {{ r.officer.full_name }}</div>
+          <div class="muted small">{{ r.reason_code }}: {{ r.reason_label }}</div>
+        </div>
+        <span class="muted small nowrap">{{ r.created_at|dt }}</span>
+      </li>
+      {% endfor %}
+    </ul>
+    <a class="btn btn-ghost btn-small" href="{{ url_for('auditor_refusals') }}">View all non-registrations</a>
+    {% else %}
+      <p class="empty">No non-registration records yet.</p>
+    {% endif %}
+  </section>
+</div>
+
+<section class="panel" aria-labelledby="audit-heading">
+  <h2 id="audit-heading">Most recent audit entries</h2>
+  {{ audit_table(recent_audit, show_case=True) }}
+  <a class="btn btn-ghost btn-small" href="{{ url_for('auditor_audit') }}">Open full audit trail</a>
+</section>
+{% endblock %}
