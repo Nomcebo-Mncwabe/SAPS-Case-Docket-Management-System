@@ -1,0 +1,87 @@
+{# auditor/case_detail.html - MODULE A: Internal Auditor / IPID Officer read-only case view #}
+{% extends "base.html" %}
+{% from "_macros.html" import status_badge, escalated_badge, timeline, audit_table %}
+{% set layout = 'app' %}
+{% set active = 'cases' %}
+{% block title %}{{ case.case_reference }}{% endblock %}
+{% block page_title %}Case {{ case.case_reference }}{% endblock %}
+
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>{{ case.case_reference }}</h1>
+    <p class="muted">
+      {{ status_badge(case.status) }} {{ escalated_badge(case) }}
+      &nbsp;&middot;&nbsp; {{ case.incident_type }}
+      &nbsp;&middot;&nbsp; Last activity {{ case.last_activity_at|ago }}
+    </p>
+  </div>
+</div>
+
+<div class="two-col two-col-wide">
+  <div>
+    <section class="panel" aria-labelledby="info-heading">
+      <h2 id="info-heading">Case information</h2>
+      <dl class="kv kv-grid">
+        <div><dt>Complainant</dt><dd>{{ case.complainant_name }}</dd></div>
+        <div><dt>E-mail</dt><dd>{{ case.complainant_email }}</dd></div>
+        <div><dt>Contact number</dt><dd>{{ case.complainant_phone or '-' }}</dd></div>
+        <div><dt>Incident date</dt><dd>{{ case.incident_date|longdate }}</dd></div>
+        <div><dt>Incident location</dt><dd>{{ case.incident_location }}</dd></div>
+        <div><dt>Registered by</dt><dd>{{ case.registered_by.full_name }}</dd></div>
+        <div><dt>Assigned officer</dt><dd>{{ case.assigned_officer.full_name if case.assigned_officer else 'Not assigned' }}</dd></div>
+        <div><dt>Registered</dt><dd>{{ case.created_at|dt }}</dd></div>
+        <div><dt>Last updated</dt><dd>{{ case.updated_at|dt }}</dd></div>
+        {% if case.closed_at %}<div><dt>Closed</dt><dd>{{ case.closed_at|dt }}</dd></div>{% endif %}
+      </dl>
+      <details class="statement-box">
+        <summary>View statement / details of the report</summary>
+        <p class="statement-text">{{ case.statement }}</p>
+      </details>
+    </section>
+
+    <section class="panel" aria-labelledby="progress-heading">
+      <h2 id="progress-heading">Progress</h2>
+      {{ timeline(case.activities) }}
+    </section>
+
+    <section class="panel" aria-labelledby="audit-heading">
+      <h2 id="audit-heading">Full audit history for this case</h2>
+      <p class="muted small">Chain-of-custody view: every view, edit, assignment and status change ever recorded against this docket, oldest actions never removed.</p>
+      {{ audit_table(audit_entries, show_case=False) }}
+    </section>
+  </div>
+
+  <div>
+    <section class="panel" aria-labelledby="status-heading">
+      <h2 id="status-heading">Status</h2>
+      <p>{{ status_badge(case.status) }}</p>
+      {% if case.pending_escalation %}
+        <p class="muted small">Escalated {{ case.pending_escalation.created_at|dt }} - awaiting supervisor review.</p>
+        <p class="wrap-text">{{ case.pending_escalation.reason }}</p>
+      {% else %}
+        <p class="muted small">No escalation is currently pending on this case.</p>
+      {% endif %}
+    </section>
+
+    {% if case.escalations %}
+    <section class="panel" aria-labelledby="escalation-history-heading">
+      <h2 id="escalation-history-heading">Escalation history</h2>
+      <ul class="item-list">
+        {% for e in case.escalations %}
+        <li>
+          <div>
+            <div>{{ e.status }} &middot; raised {{ e.created_at|dt }}</div>
+            <div class="muted small">{{ e.reason }}</div>
+            {% if e.reviewed_at %}
+              <div class="muted small">Reviewed {{ e.reviewed_at|dt }} by {{ e.reviewed_by.full_name if e.reviewed_by else '-' }}: {{ e.supervisor_action }}</div>
+            {% endif %}
+          </div>
+        </li>
+        {% endfor %}
+      </ul>
+    </section>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
