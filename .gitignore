@@ -1,0 +1,22 @@
+# PyCharm
+.idea/
+
+# Python virtual environments
+.venv/
+venv/
+
+# Environment variables / secrets
+.env
+
+# Python cache
+__pycache__/
+*.pyc
+
+# Local database
+*.db
+
+# Instance/local files
+instance/
+
+# macOS
+.DS_Store

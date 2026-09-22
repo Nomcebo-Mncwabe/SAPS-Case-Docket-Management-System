@@ -1,0 +1,55 @@
+{# officer/_case_fields.html - MODULE A: form fields shared by "Register case" and "Edit details". #}
+{# Needs: form (values), incident_types, today, show_statement (True/False) #}
+<fieldset class="fieldset">
+  <legend>Complainant</legend>
+  <div class="grid-2">
+    <div class="field">
+      <label for="complainant_name">Full name <span class="req" aria-hidden="true">*</span></label>
+      <input type="text" id="complainant_name" name="complainant_name" maxlength="120"
+             value="{{ form.get('complainant_name', '') }}" required>
+    </div>
+    <div class="field">
+      <label for="complainant_email">E-mail address <span class="req" aria-hidden="true">*</span></label>
+      <input type="email" id="complainant_email" name="complainant_email" maxlength="120"
+             value="{{ form.get('complainant_email', '') }}" required>
+      <p class="hint">The case reference and all OTPs are sent here. Check the spelling with the complainant.</p>
+    </div>
+    <div class="field">
+      <label for="complainant_phone">Contact number</label>
+      <input type="tel" id="complainant_phone" name="complainant_phone" maxlength="20"
+             value="{{ form.get('complainant_phone', '') }}" placeholder="e.g. 082 555 0101">
+    </div>
+  </div>
+</fieldset>
+
+<fieldset class="fieldset">
+  <legend>Incident</legend>
+  <div class="grid-2">
+    <div class="field">
+      <label for="incident_date">Date of incident <span class="req" aria-hidden="true">*</span></label>
+      <input type="date" id="incident_date" name="incident_date" max="{{ today }}"
+             value="{{ form.get('incident_date', '') }}" required>
+    </div>
+    <div class="field">
+      <label for="incident_type">Type of incident <span class="req" aria-hidden="true">*</span></label>
+      <select id="incident_type" name="incident_type" required>
+        <option value="">Choose a type</option>
+        {% for t in incident_types %}
+          <option value="{{ t }}" {% if form.get('incident_type', '') == t %}selected{% endif %}>{{ t }}</option>
+        {% endfor %}
+      </select>
+    </div>
+  </div>
+  <div class="field">
+    <label for="incident_location">Where did it happen? <span class="req" aria-hidden="true">*</span></label>
+    <input type="text" id="incident_location" name="incident_location" maxlength="255"
+           value="{{ form.get('incident_location', '') }}" required>
+  </div>
+  {% if show_statement %}
+  <div class="field">
+    <label for="statement">Statement / details of the report <span class="req" aria-hidden="true">*</span></label>
+    <textarea id="statement" name="statement" rows="7" maxlength="5000" data-counter required>{{ form.get('statement', '') }}</textarea>
+    <p class="hint">Record what the complainant reports, in their own words where possible (at least 20 characters). The original statement cannot be edited later; extra information is added as a progress update.</p>
+  </div>
+  {% endif %}
+</fieldset>

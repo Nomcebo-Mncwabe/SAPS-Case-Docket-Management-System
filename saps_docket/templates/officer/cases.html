@@ -1,0 +1,80 @@
+{# officer/cases.html - MODULE A: officer case list (My Cases / Assigned / Attention) #}
+{% extends "base.html" %}
+{% from "_macros.html" import status_badge, escalated_badge, pagination %}
+{% set layout = 'app' %}
+{% set active = {'all': 'cases', 'registered': 'cases', 'assigned': 'assigned', 'attention': 'attention'}[view] %}
+{% block title %}{{ title }}{% endblock %}
+{% block page_title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>{{ title }}</h1>
+    <p class="muted">{{ pager.total }} case(s) found.</p>
+  </div>
+  <a class="btn btn-gold" href="{{ url_for('officer_register_case') }}">Register new case</a>
+</div>
+
+<nav class="tabs" aria-label="Case views">
+  <a href="{{ url_for('officer_cases', view='all') }}" {% if view == 'all' %}class="active" aria-current="page"{% endif %}>All my cases</a>
+  <a href="{{ url_for('officer_cases', view='registered') }}" {% if view == 'registered' %}class="active" aria-current="page"{% endif %}>Registered by me</a>
+  <a href="{{ url_for('officer_cases', view='assigned') }}" {% if view == 'assigned' %}class="active" aria-current="page"{% endif %}>Assigned to me</a>
+  <a href="{{ url_for('officer_cases', view='attention') }}" {% if view == 'attention' %}class="active" aria-current="page"{% endif %}>Requiring attention</a>
+</nav>
+
+<form method="get" action="{{ url_for('officer_cases') }}" class="filter-bar">
+  <input type="hidden" name="view" value="{{ view }}">
+  <div class="field">
+    <label for="q">Search</label>
+    <input type="search" id="q" name="q" value="{{ search }}" placeholder="Reference, name or location">
+  </div>
+  <div class="field">
+    <label for="status">Status</label>
+    <select id="status" name="status">
+      <option value="">All statuses</option>
+      {% for s in CASE_STATUSES %}
+        <option value="{{ s }}" {% if s == status_filter %}selected{% endif %}>{{ s }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <button type="submit" class="btn btn-primary">Apply filters</button>
+  <a class="btn btn-ghost" href="{{ url_for('officer_cases', view=view) }}">Clear</a>
+</form>
+
+<section class="panel panel-flush">
+  {% if pager.items %}
+  <div class="table-wrap">
+    <table class="table">
+      <thead>
+        <tr>
+          <th scope="col">Case reference</th>
+          <th scope="col">Complainant</th>
+          <th scope="col">Incident</th>
+          <th scope="col">Status</th>
+          <th scope="col">Assigned officer</th>
+          <th scope="col">Last activity</th>
+          <th scope="col"><span class="visually-hidden">Actions</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for case in pager.items %}
+        <tr>
+          <td class="nowrap"><a class="ref" href="{{ url_for('officer_case_detail', case_id=case.id) }}">{{ case.case_reference }}</a></td>
+          <td>{{ case.complainant_name }}</td>
+          <td>{{ case.incident_type }}<div class="muted small">{{ case.incident_date|longdate }}</div></td>
+          <td>{{ status_badge(case.status) }} {{ escalated_badge(case) }}</td>
+          <td>{{ case.assigned_officer.full_name if case.assigned_officer else 'Not assigned' }}</td>
+          <td class="nowrap">{{ case.last_activity_at|dt }}<div class="muted small">{{ case.last_activity_at|ago }}</div></td>
+          <td class="nowrap"><a class="btn btn-small btn-primary" href="{{ url_for('officer_case_detail', case_id=case.id) }}">Open</a></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+    <p class="empty">No cases match. Change the filters, or <a href="{{ url_for('officer_register_case') }}">register a new case</a>.</p>
+  {% endif %}
+</section>
+
+{{ pagination(pager, 'officer_cases', filters) }}
+{% endblock %}

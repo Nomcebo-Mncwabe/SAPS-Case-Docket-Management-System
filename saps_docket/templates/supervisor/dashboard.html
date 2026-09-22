@@ -1,0 +1,85 @@
+{# supervisor/dashboard.html - MODULE A: supervisor oversight dashboard #}
+{% extends "base.html" %}
+{% from "_macros.html" import status_badge, audit_table %}
+{% set layout = 'app' %}
+{% set active = 'dashboard' %}
+{% block title %}Supervisor dashboard{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>Station overview</h1>
+    <p class="muted">All cases, escalations and officer workload at a glance.</p>
+  </div>
+  <a class="btn btn-primary" href="{{ url_for('supervisor_cases') }}">View all cases</a>
+</div>
+
+<section class="stat-grid" aria-label="Station-wide summary">
+  <a class="stat" href="{{ url_for('supervisor_cases') }}">
+    <span class="stat-number">{{ stats.total }}</span><span class="stat-label">Total cases</span>
+  </a>
+  <a class="stat stat-open" href="{{ url_for('supervisor_cases', status='OPEN') }}">
+    <span class="stat-number">{{ stats.open }}</span><span class="stat-label">Open</span>
+  </a>
+  <a class="stat stat-investigating" href="{{ url_for('supervisor_cases', status='UNDER INVESTIGATION') }}">
+    <span class="stat-number">{{ stats.investigating }}</span><span class="stat-label">Under investigation</span>
+  </a>
+  <a class="stat stat-closed" href="{{ url_for('supervisor_cases', status='CLOSED') }}">
+    <span class="stat-number">{{ stats.closed }}</span><span class="stat-label">Closed</span>
+  </a>
+  <a class="stat stat-attention" href="{{ url_for('supervisor_escalations') }}">
+    <span class="stat-number">{{ stats.attention }}</span><span class="stat-label">Pending escalations</span>
+  </a>
+  <a class="stat" href="{{ url_for('supervisor_refusals') }}">
+    <span class="stat-number">{{ stats.refusals }}</span><span class="stat-label">Non-registrations</span>
+  </a>
+</section>
+
+<div class="two-col">
+  <section class="panel" aria-labelledby="pending-heading">
+    <h2 id="pending-heading">Cases needing review</h2>
+    <p class="muted small">Flagged after {{ standstill_days }} day(s) without activity.</p>
+    {% if pending %}
+    <ul class="item-list">
+      {% for e in pending %}
+      <li>
+        <div>
+          <a class="ref" href="{{ url_for('supervisor_case_detail', case_id=e.case.id) }}">{{ e.case.case_reference }}</a>
+          {{ status_badge(e.case.status) }}
+          <div class="muted small">{{ e.reason }}</div>
+        </div>
+        <a class="btn btn-small btn-primary" href="{{ url_for('supervisor_case_detail', case_id=e.case.id) }}">Review</a>
+      </li>
+      {% endfor %}
+    </ul>
+    <a class="btn btn-ghost btn-small" href="{{ url_for('supervisor_escalations') }}">View all escalations</a>
+    {% else %}
+      <p class="empty">No cases currently need review.</p>
+    {% endif %}
+  </section>
+
+  <section class="panel" aria-labelledby="workload-heading">
+    <h2 id="workload-heading">Officer workload</h2>
+    <p class="muted small">Number of open / under-investigation cases assigned to each officer.</p>
+    {% if workload %}
+    <ul class="item-list">
+      {% for officer, count in workload %}
+      <li>
+        <div>{{ officer.full_name }}</div>
+        <span class="badge badge-count">{{ count }}</span>
+      </li>
+      {% endfor %}
+    </ul>
+    {% else %}
+      <p class="empty">No officers found.</p>
+    {% endif %}
+  </section>
+</div>
+
+<section class="panel" aria-labelledby="audit-heading">
+  <h2 id="audit-heading">Most recent audit entries</h2>
+  {{ audit_table(recent_audit, show_case=True) }}
+  <a class="btn btn-ghost btn-small" href="{{ url_for('supervisor_audit') }}">Open full audit trail</a>
+</section>
+{% endblock %}

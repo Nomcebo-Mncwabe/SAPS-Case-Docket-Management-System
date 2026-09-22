@@ -1,0 +1,62 @@
+{# officer/refusal_form.html - MODULE A: record a non-registration (a reported crime cannot simply disappear) #}
+{% extends "base.html" %}
+{% set layout = 'app' %}
+{% set active = 'refusals' %}
+{% block title %}Record non-registration{% endblock %}
+{% block page_title %}Record a non-registration{% endblock %}
+
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>Record a non-registration</h1>
+    <p class="muted">Use this when a reported matter is not registered as a case. A coded reason and a written justification are both required - a blank refusal is not allowed.</p>
+  </div>
+</div>
+
+<form method="post" action="{{ url_for('officer_refusal_new') }}" class="form form-wide" novalidate>
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+  <div class="grid-2">
+    <div class="field">
+      <label for="complainant_name">Name of person who reported <span class="req" aria-hidden="true">*</span></label>
+      <input type="text" id="complainant_name" name="complainant_name" maxlength="120" value="{{ form.get('complainant_name', '') }}" required>
+    </div>
+    <div class="field">
+      <label for="complainant_contact">Contact details</label>
+      <input type="text" id="complainant_contact" name="complainant_contact" maxlength="120" value="{{ form.get('complainant_contact', '') }}">
+    </div>
+  </div>
+
+  <div class="field">
+    <label for="incident_summary">Summary of what was reported <span class="req" aria-hidden="true">*</span></label>
+    <textarea id="incident_summary" name="incident_summary" rows="4" maxlength="2000" required>{{ form.get('incident_summary', '') }}</textarea>
+  </div>
+
+  <div class="field">
+    <label for="reason_code">Coded reason <span class="req" aria-hidden="true">*</span></label>
+    <select id="reason_code" name="reason_code" required>
+      <option value="">Choose a reason</option>
+      {% for code, label in reasons.items() %}
+        <option value="{{ code }}" {% if form.get('reason_code', '') == code %}selected{% endif %}>{{ code }} &ndash; {{ label }}</option>
+      {% endfor %}
+    </select>
+  </div>
+
+  <div class="field">
+    <label for="justification">Written justification <span class="req" aria-hidden="true">*</span></label>
+    <textarea id="justification" name="justification" rows="5" maxlength="3000" data-counter required>{{ form.get('justification', '') }}</textarea>
+    <p class="hint">Explain the decision in your own words (at least 30 characters). This record is permanent.</p>
+  </div>
+
+  <div class="field">
+    <label for="related_case_reference">Related case reference (required for a duplicate report)</label>
+    <input type="text" id="related_case_reference" name="related_case_reference" maxlength="20"
+           value="{{ form.get('related_case_reference', '') }}" placeholder="SAPS-2026-000001">
+  </div>
+
+  <div class="button-row">
+    <button type="submit" class="btn btn-gold btn-large">Save non-registration record</button>
+    <a class="btn btn-ghost btn-large" href="{{ url_for('officer_refusals') }}">Cancel</a>
+  </div>
+</form>
+{% endblock %}

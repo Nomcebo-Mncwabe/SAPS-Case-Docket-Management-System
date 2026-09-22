@@ -1,0 +1,132 @@
+{#
+  base.html  -  MODULE A (shared layout)
+  Every page extends this file. Child pages set two variables at the top:
+      set layout = 'app'        -> sidebar layout for logged-in officer/supervisor pages
+      set active = 'dashboard'  -> which sidebar link is highlighted
+  Pages that set nothing use the public layout (landing page, login, citizen portal).
+#}
+{% set layout = layout|default('public') %}
+{% set active = active|default('') %}
+{% macro flash_block() %}
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      <div class="flash-stack" role="region" aria-label="Messages">
+        {% for category, message in messages %}
+          <div class="flash flash-{{ category }}" role="{{ 'alert' if category in ('danger', 'warning') else 'status' }}">
+            <span class="flash-label">{{ {'success': 'Done', 'danger': 'Problem', 'warning': 'Notice', 'info': 'Info'}.get(category, 'Info') }}</span>
+            <span class="flash-text">{{ message }}</span>
+            <button type="button" class="flash-close" aria-label="Dismiss message">&times;</button>
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+  {% endwith %}
+{% endmacro %}
+<!DOCTYPE html>
+<html lang="en-ZA">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Case Docket Management System{% endblock %} | University prototype</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body class="{{ 'layout-app' if (layout == 'app' and current_user) else 'layout-public' }}">
+<a class="skip-link" href="#main-content">Skip to main content</a>
+
+{% if layout == 'app' and current_user %}
+<div class="app-shell">
+  <aside class="sidebar" id="sidebar" aria-label="Sidebar">
+    <a class="brand" href="{{ home_url }}">
+      <svg class="brand-mark" viewBox="0 0 32 36" width="30" height="34" aria-hidden="true">
+        <path d="M16 1 3 6v10c0 9 5.6 15.6 13 19 7.4-3.4 13-10 13-19V6L16 1z" fill="none" stroke="#C9A64A" stroke-width="2"/>
+        <path d="M10 15h12M10 20h12M10 25h7" stroke="#C9A64A" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+      <span class="brand-text">Case Docket<small>Management System</small></span>
+    </a>
+
+    <nav class="side-nav" aria-label="Main navigation">
+      {% if current_user.is_officer %}
+        <a href="{{ url_for('officer_dashboard') }}" {% if active == 'dashboard' %}class="active" aria-current="page"{% endif %}>Dashboard</a>
+        <a href="{{ url_for('officer_register_case') }}" {% if active == 'register' %}class="active" aria-current="page"{% endif %}>Register Case</a>
+        <a href="{{ url_for('officer_cases', view='all') }}" {% if active == 'cases' %}class="active" aria-current="page"{% endif %}>My Cases</a>
+        <a href="{{ url_for('officer_cases', view='assigned') }}" {% if active == 'assigned' %}class="active" aria-current="page"{% endif %}>Assigned Cases</a>
+        <a href="{{ url_for('officer_cases', view='attention') }}" {% if active == 'attention' %}class="active" aria-current="page"{% endif %}>Cases Requiring Attention</a>
+        <a href="{{ url_for('officer_refusals') }}" {% if active == 'refusals' %}class="active" aria-current="page"{% endif %}>Non-Registrations</a>
+        <a href="{{ url_for('officer_profile') }}" {% if active == 'profile' %}class="active" aria-current="page"{% endif %}>Profile</a>
+      {% else %}
+        <a href="{{ url_for('supervisor_dashboard') }}" {% if active == 'dashboard' %}class="active" aria-current="page"{% endif %}>Dashboard</a>
+        <a href="{{ url_for('supervisor_cases') }}" {% if active == 'cases' %}class="active" aria-current="page"{% endif %}>All Cases</a>
+        <a href="{{ url_for('supervisor_escalations') }}" {% if active == 'escalations' %}class="active" aria-current="page"{% endif %}>Escalations</a>
+        <a href="{{ url_for('supervisor_audit') }}" {% if active == 'audit' %}class="active" aria-current="page"{% endif %}>Audit Trail</a>
+        <a href="{{ url_for('supervisor_refusals') }}" {% if active == 'refusals' %}class="active" aria-current="page"{% endif %}>Non-Registrations</a>
+      {% endif %}
+    </nav>
+
+    <div class="sidebar-foot">
+      <div class="user-chip">
+        <span class="user-name">{{ current_user.full_name }}</span>
+        <span class="user-role">{{ current_user.role_label }}</span>
+      </div>
+      <form method="post" action="{{ url_for('logout') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit" class="btn btn-sidebar">Logout</button>
+      </form>
+    </div>
+  </aside>
+
+  <div class="main">
+    <header class="topbar">
+      <button type="button" class="menu-toggle" id="menu-toggle" aria-controls="sidebar" aria-expanded="false">Menu</button>
+      <div class="topbar-title">{% block page_title %}{% endblock %}</div>
+      <div class="topbar-note">University prototype</div>
+    </header>
+    <main class="content" id="main-content">
+      {{ flash_block() }}
+      {% block content %}{% endblock %}
+    </main>
+    <footer class="app-footer">
+      Case Docket Management System 
+    </footer>
+  </div>
+</div>
+
+{% else %}
+<header class="public-header">
+  <div class="public-header-inner">
+    <a class="brand" href="{{ url_for('index') }}">
+      <svg class="brand-mark" viewBox="0 0 32 36" width="30" height="34" aria-hidden="true">
+        <path d="M16 1 3 6v10c0 9 5.6 15.6 13 19 7.4-3.4 13-10 13-19V6L16 1z" fill="none" stroke="#C9A64A" stroke-width="2"/>
+        <path d="M10 15h12M10 20h12M10 25h7" stroke="#C9A64A" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+      <span class="brand-text">Case Docket<small>Management System</small></span>
+    </a>
+    <nav class="public-nav" aria-label="Main navigation">
+      <a href="{{ url_for('index') }}" {% if active == 'home' %}class="active" aria-current="page"{% endif %}>Home</a>
+      <a href="{{ url_for('citizen_portal') }}" {% if active == 'citizen' %}class="active" aria-current="page"{% endif %}>Track a case</a>
+      {% if current_user %}
+        <a class="btn btn-gold btn-small" href="{{ home_url }}">Go to dashboard</a>
+      {% else %}
+        <a class="btn btn-gold btn-small" href="{{ url_for('login') }}">Officer login</a>
+      {% endif %}
+    </nav>
+  </div>
+</header>
+
+<main class="public-main" id="main-content">
+  {% block public_hero %}{% endblock %}
+  <div class="public-wrap {% block public_wrap_class %}{% endblock %}">
+    {{ flash_block() }}
+    {% block public_content %}{% endblock %}
+  </div>
+</main>
+
+<footer class="public-footer">
+  <div class="public-footer-inner">
+    <p><strong>Case Docket Management System</strong></p>
+  </div>
+</footer>
+{% endif %}
+
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>

@@ -1,0 +1,28 @@
+{# officer/edit_case.html - MODULE A: correct complainant / incident details (CRUD: Update) #}
+{% extends "base.html" %}
+{% set layout = 'app' %}
+{% set active = 'cases' %}
+{% block title %}Correct details - {{ case.case_reference }}{% endblock %}
+{% block page_title %}Correct case details{% endblock %}
+
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>Correct details for {{ case.case_reference }}</h1>
+    <p class="muted">Every change is written to the audit trail with the old and the new value. The original statement is locked.</p>
+  </div>
+</div>
+
+<form method="post" action="{{ url_for('officer_case_edit', case_id=case.id) }}" class="form form-wide" novalidate>
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  {% set show_statement = False %}
+  {% include "officer/_case_fields.html" %}
+
+  <div class="notice notice-info">If you change the e-mail address, any OTP already sent to the old address stops working.</div>
+
+  <div class="button-row">
+    <button type="submit" class="btn btn-primary btn-large">Save corrections</button>
+    <a class="btn btn-ghost btn-large" href="{{ url_for('officer_case_detail', case_id=case.id) }}">Cancel</a>
+  </div>
+</form>
+{% endblock %}

@@ -1,0 +1,47 @@
+{# officer/refusals.html - MODULE A: my non-registration records #}
+{% extends "base.html" %}
+{% from "_macros.html" import pagination %}
+{% set layout = 'app' %}
+{% set active = 'refusals' %}
+{% block title %}My non-registration records{% endblock %}
+{% block page_title %}Non-registration records{% endblock %}
+
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>My non-registration records</h1>
+    <p class="muted">Reports you decided not to register as a case, with the reason on record. These cannot be edited or deleted.</p>
+  </div>
+  <a class="btn btn-gold" href="{{ url_for('officer_refusal_new') }}">Record a non-registration</a>
+</div>
+
+<section class="panel panel-flush">
+  {% if pager.items %}
+  <div class="table-wrap">
+    <table class="table">
+      <thead>
+        <tr>
+          <th scope="col">Reference</th>
+          <th scope="col">Reported by</th>
+          <th scope="col">Reason</th>
+          <th scope="col">Recorded</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in pager.items %}
+        <tr>
+          <td class="nowrap">{{ r.reference }}</td>
+          <td>{{ r.complainant_name }}</td>
+          <td>{{ r.reason_code }} &ndash; {{ r.reason_label }}</td>
+          <td class="nowrap">{{ r.created_at|dt }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+    <p class="empty">No non-registration records yet.</p>
+  {% endif %}
+</section>
+{{ pagination(pager, 'officer_refusals') }}
+{% endblock %}

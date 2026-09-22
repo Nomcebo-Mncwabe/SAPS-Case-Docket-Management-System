@@ -1,0 +1,42 @@
+{# login.html - MODULE A: officer / supervisor login #}
+{% extends "base.html" %}
+{% block title %}Login{% endblock %}
+{% block public_wrap_class %}narrow{% endblock %}
+
+{% block public_content %}
+<div class="auth-panel">
+  <h1>Officer and supervisor login</h1>
+  <p class="muted">Sign in with the account issued to you. Every login is recorded in the audit trail.</p>
+
+  <form method="post" action="{{ url_for('login', next=request.args.get('next')) }}" class="form" novalidate>
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+    <div class="field">
+      <label for="username">Username or e-mail</label>
+      <input type="text" id="username" name="username" value="{{ username }}" autocomplete="username" required autofocus>
+    </div>
+
+    <div class="field">
+      <label for="password">Password</label>
+      <input type="password" id="password" name="password" autocomplete="current-password" required>
+    </div>
+
+    <button type="submit" class="btn btn-primary btn-block">Log in</button>
+  </form>
+
+  <p class="auth-alt">Reporting a crime you already registered? <a href="{{ url_for('citizen_portal') }}">Track your case</a>.</p>
+
+  <aside class="demo-box" aria-label="Demo credentials">
+    <h2>Demo accounts (prototype only)</h2>
+    <table class="table table-compact">
+      <thead><tr><th scope="col">Role</th><th scope="col">Username</th><th scope="col">Password</th></tr></thead>
+      <tbody>
+        <tr><td>CSC Officer</td><td>officer1</td><td>password123</td></tr>
+        <tr><td>CSC Officer</td><td>officer2</td><td>password123</td></tr>
+        <tr><td>CSC Supervisor</td><td>supervisor1</td><td>password123</td></tr>
+      </tbody>
+    </table>
+    <p class="muted small">Remove this box and change the passwords before any real use.</p>
+  </aside>
+</div>
+{% endblock %}

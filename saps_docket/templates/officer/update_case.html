@@ -1,0 +1,59 @@
+{# officer/update_case.html - MODULE A: add progress update / change status #}
+{% extends "base.html" %}
+{% from "_macros.html" import status_badge %}
+{% set layout = 'app' %}
+{% set active = 'cases' %}
+{% block title %}Update {{ case.case_reference }}{% endblock %}
+{% block page_title %}Add progress update{% endblock %}
+
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>{{ case.case_reference }}</h1>
+    <p class="muted">Current status: {{ status_badge(case.status) }}</p>
+  </div>
+  <a class="btn btn-ghost" href="{{ url_for('officer_case_detail', case_id=case.id) }}">Back to case</a>
+</div>
+
+{% if case.is_closed and not next_statuses %}
+  <p class="notice notice-warning">This case is closed and cannot be moved further.</p>
+{% else %}
+<form method="post" action="{{ url_for('officer_case_update', case_id=case.id) }}" class="form form-wide" novalidate>
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+  <div class="field">
+    <label for="activity_type">Activity type <span class="req" aria-hidden="true">*</span></label>
+    <select id="activity_type" name="activity_type" required>
+      <option value="">Choose an activity</option>
+      {% for t in activity_types %}
+        <option value="{{ t }}" {% if form.get('activity_type', '') == t %}selected{% endif %}>{{ t }}</option>
+      {% endfor %}
+    </select>
+  </div>
+
+  <div class="field">
+    <label for="description">Description <span class="req" aria-hidden="true">*</span></label>
+    <textarea id="description" name="description" rows="5" maxlength="2000" data-counter required>{{ form.get('description', '') }}</textarea>
+    <p class="hint">Describe the progress made (at least 5 characters). This is recorded in the case timeline and audit trail.</p>
+  </div>
+
+  {% if next_statuses %}
+  <div class="field">
+    <label for="new_status">Change status (optional)</label>
+    <select id="new_status" name="new_status">
+      <option value="">Keep current status ({{ case.status }})</option>
+      {% for s in next_statuses %}
+        <option value="{{ s }}" {% if form.get('new_status', '') == s %}selected{% endif %}>Change to {{ s }}</option>
+      {% endfor %}
+    </select>
+    <p class="hint">The description above will be used as the reason for the status change.</p>
+  </div>
+  {% endif %}
+
+  <div class="button-row">
+    <button type="submit" class="btn btn-primary btn-large">Save update</button>
+    <a class="btn btn-ghost btn-large" href="{{ url_for('officer_case_detail', case_id=case.id) }}">Cancel</a>
+  </div>
+</form>
+{% endif %}
+{% endblock %}

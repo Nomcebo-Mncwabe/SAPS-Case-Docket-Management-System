@@ -1,0 +1,96 @@
+{# _macros.html - MODULE A: small reusable pieces (badges, pagination, timeline). #}
+
+{# Status badge. The status is ALWAYS written in words, colour is only a helper. #}
+{% macro status_badge(status) %}
+  <span class="badge badge-{{ status|lower|replace(' ', '-') }}">{{ status }}</span>
+{% endmacro %}
+
+{# Shown next to the status when a supervisor has to look at the case. #}
+{% macro escalated_badge(case) %}
+  {% if case.is_escalated %}<span class="badge badge-escalated" title="No recent activity - waiting for supervisor review">ESCALATED</span>{% endif %}
+{% endmacro %}
+
+{# Page links. 'filters' keeps the search/status filters when moving between pages. #}
+{% macro pagination(pager, endpoint, filters={}) %}
+  {% if pager.pages > 1 %}
+  <nav class="pagination" aria-label="Pages">
+    {% if pager.has_prev %}
+      <a href="{{ url_for(endpoint, page=pager.prev_num, **filters) }}">Previous</a>
+    {% endif %}
+    {% for number in pager.iter_pages(left_edge=1, right_edge=1, left_current=1, right_current=2) %}
+      {% if number %}
+        {% if number == pager.page %}
+          <span class="current" aria-current="page">{{ number }}</span>
+        {% else %}
+          <a href="{{ url_for(endpoint, page=number, **filters) }}">{{ number }}</a>
+        {% endif %}
+      {% else %}
+        <span class="gap">&hellip;</span>
+      {% endif %}
+    {% endfor %}
+    {% if pager.has_next %}
+      <a href="{{ url_for(endpoint, page=pager.next_num, **filters) }}">Next</a>
+    {% endif %}
+  </nav>
+  <p class="table-note">Showing {{ pager.items|length }} of {{ pager.total }} record(s).</p>
+  {% endif %}
+{% endmacro %}
+
+{# The case timeline (newest first). Each entry says WHAT, WHO and WHEN. #}
+{% macro timeline(activities) %}
+  {% if activities %}
+  <ol class="timeline">
+    {% for a in activities %}
+    <li>
+      <div class="timeline-when">{{ a.created_at|dt }}</div>
+      <div class="timeline-body">
+        <div class="timeline-title">{{ a.activity_type }}</div>
+        <div class="timeline-text">{{ a.description }}</div>
+        <div class="timeline-who">Recorded by {{ a.officer.full_name }} ({{ a.officer.role_label }})</div>
+      </div>
+    </li>
+    {% endfor %}
+  </ol>
+  {% else %}
+    <p class="empty">No activity recorded yet.</p>
+  {% endif %}
+{% endmacro %}
+
+{# The audit ledger: USER -> ACTION -> CASE -> TIMESTAMP #}
+{% macro audit_table(entries, show_case=True) %}
+  {% if entries %}
+  <div class="table-wrap">
+    <table class="table table-audit">
+      <thead>
+        <tr>
+          <th scope="col">When</th>
+          <th scope="col">Who</th>
+          <th scope="col">Action</th>
+          {% if show_case %}<th scope="col">Case</th>{% endif %}
+          <th scope="col">Details</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for e in entries %}
+        <tr>
+          <td class="nowrap">{{ e.timestamp|dt }}</td>
+          <td>{{ e.actor_name }}</td>
+          <td><span class="action-tag">{{ e.action|replace('_', ' ')|title }}</span></td>
+          {% if show_case %}
+          <td class="nowrap">
+            {% if e.case %}{{ e.case.case_reference }}{% else %}&ndash;{% endif %}
+          </td>
+          {% endif %}
+          <td class="wrap-text">{{ e.description }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+    <p class="empty">No audit entries found.</p>
+  {% endif %}
+{% endmacro %}
+
+{# Hidden CSRF field - every POST form must include this. #}
+{% macro csrf() %}<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">{% endmacro %}

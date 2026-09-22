@@ -1,0 +1,33 @@
+{# index.html - MODULE A: landing / home page #}
+{% extends "base.html" %}
+{% set active = 'home' %}
+
+{% block title %}Home{% endblock %}
+
+{% block public_hero %}
+<section class="hero">
+  <div class="hero-inner">
+    <div class="hero-copy">
+      <h1>Every reported crime leaves a record.</h1>
+      <p class="hero-lead">Improving accountability, transparency and traceability in case docket registration.</p>
+      <p class="hero-text">
+        The Case Docket Management System helps a Community Service Centre officer register a digital docket,
+        issue a unique case reference, and keep a permanent trail of who did what, and when. Supervisors can
+        see when a case has gone quiet, and citizens can check progress with their case reference and an e-mailed one-time PIN.
+      </p>
+      <div class="hero-actions">
+        <a class="btn btn-gold btn-large" href="{{ url_for('login') }}">Officer and supervisor login</a>
+        <a class="btn btn-outline-light btn-large" href="{{ url_for('citizen_portal') }}">Track a case</a>
+      </div>
+
+    </div>
+
+  </div>
+</section>
+{% endblock %}
+
+{% block public_wrap_class %}wide{% endblock %}
+
+{% block public_content %}
+
+{% endblock %}

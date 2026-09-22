@@ -1,0 +1,74 @@
+{# supervisor/cases.html - MODULE A: supervisor view of all cases #}
+{% extends "base.html" %}
+{% from "_macros.html" import status_badge, escalated_badge, pagination %}
+{% set layout = 'app' %}
+{% set active = 'cases' %}
+{% block title %}All cases{% endblock %}
+{% block page_title %}All cases{% endblock %}
+
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>All cases</h1>
+    <p class="muted">{{ pager.total }} case(s) found.</p>
+  </div>
+</div>
+
+<form method="get" action="{{ url_for('supervisor_cases') }}" class="filter-bar">
+  <div class="field">
+    <label for="q">Search</label>
+    <input type="search" id="q" name="q" value="{{ search }}" placeholder="Reference, name or location">
+  </div>
+  <div class="field">
+    <label for="status">Status</label>
+    <select id="status" name="status">
+      <option value="">All statuses</option>
+      {% for s in CASE_STATUSES %}
+        <option value="{{ s }}" {% if s == status_filter %}selected{% endif %}>{{ s }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="field field-checkbox">
+    <label><input type="checkbox" name="attention" value="1" {% if attention_only %}checked{% endif %}> Requiring attention only</label>
+  </div>
+  <button type="submit" class="btn btn-primary">Apply filters</button>
+  <a class="btn btn-ghost" href="{{ url_for('supervisor_cases') }}">Clear</a>
+</form>
+
+<section class="panel panel-flush">
+  {% if pager.items %}
+  <div class="table-wrap">
+    <table class="table">
+      <thead>
+        <tr>
+          <th scope="col">Case reference</th>
+          <th scope="col">Complainant</th>
+          <th scope="col">Registered by</th>
+          <th scope="col">Assigned officer</th>
+          <th scope="col">Status</th>
+          <th scope="col">Last activity</th>
+          <th scope="col"><span class="visually-hidden">Actions</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for case in pager.items %}
+        <tr>
+          <td class="nowrap"><a class="ref" href="{{ url_for('supervisor_case_detail', case_id=case.id) }}">{{ case.case_reference }}</a></td>
+          <td>{{ case.complainant_name }}</td>
+          <td>{{ case.registered_by.full_name }}</td>
+          <td>{{ case.assigned_officer.full_name if case.assigned_officer else 'Not assigned' }}</td>
+          <td>{{ status_badge(case.status) }} {{ escalated_badge(case) }}</td>
+          <td class="nowrap">{{ case.last_activity_at|dt }}<div class="muted small">{{ case.last_activity_at|ago }}</div></td>
+          <td class="nowrap"><a class="btn btn-small btn-primary" href="{{ url_for('supervisor_case_detail', case_id=case.id) }}">Open</a></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+    <p class="empty">No cases match these filters.</p>
+  {% endif %}
+</section>
+
+{{ pagination(pager, 'supervisor_cases', filters) }}
+{% endblock %}
