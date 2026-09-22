@@ -43,6 +43,7 @@ from config import (
     INCIDENT_TYPES,
     MANUAL_ACTIVITY_TYPES,
     NON_REGISTRATION_REASONS,
+    ROLE_AUDITOR,
     ROLE_OFFICER,
     ROLE_SUPERVISOR,
     STATUS_CLOSED,
@@ -140,6 +141,8 @@ def home_for(user):
         return url_for("login")
     if user.is_supervisor:
         return url_for("supervisor_dashboard")
+    if user.is_auditor:
+        return url_for("auditor_dashboard")
     return url_for("officer_dashboard")
 
 
@@ -194,9 +197,18 @@ def inject_template_variables():
     }
 
 
+
+
+
 # =============================================================================
 # 3. PUBLIC ROUTES  (MODULE A: landing page, login, logout)
 # =============================================================================
+
+
+
+
+
+
 @app.route("/")
 def index():
     return render_template("index.html")
@@ -920,6 +932,104 @@ def supervisor_refusals():
         NonRegistration.created_at.desc(), NonRegistration.id.desc()
     ).paginate(page=page, per_page=app.config["PAGE_SIZE"], error_out=False)
     return render_template("supervisor/refusals.html", pager=pager)
+
+
+
+#=============================================================================
+# 6B. INTERNAL AUDITOR / IPID OFFICER ROUTES  (MODULE A: read-only oversight)
+# =============================================================================
+
+@app.route("/auditor/dashboard")
+@login_required
+@role_required(ROLE_AUDITOR)
+def auditor_dashboard():
+    stats = {
+        "total": Case.query.count(),
+        "open": Case.query.filter_by(status=STATUS_OPEN).count(),
+        "investigating": Case.query.filter_by(status=STATUS_UNDER_INVESTIGATION).count(),
+        "closed": Case.query.filter_by(status=STATUS_CLOSED).count(),
+        "escalated": Escalation.query.filter_by(status=ESCALATION_PENDING).count(),
+        "refusals": NonRegistration.query.count(),
+        "audit_entries": AuditLog.query.count(),
+    }
+    recent_audit = AuditLog.query.order_by(AuditLog.timestamp.desc(), AuditLog.id.desc()).limit(10).all()
+    recent_refusals = (
+        NonRegistration.query.order_by(NonRegistration.created_at.desc(), NonRegistration.id.desc())
+        .limit(5)
+        .all()
+    )
+    access_denied_count = AuditLog.query.filter_by(action="ACCESS_DENIED").count()
+    return render_template(
+        "auditor/dashboard.html",
+        stats=stats,
+        recent_audit=recent_audit,
+        recent_refusals=recent_refusals,
+        access_denied_count=access_denied_count,
+    )
+
+
+@app.route("/auditor/cases")
+@login_required
+@role_required(ROLE_AUDITOR)
+def auditor_cases():
+    query = apply_case_filters(Case.query)
+    page = request.args.get("page", 1, type=int)
+    pager = query.order_by(Case.last_activity_at.desc(), Case.id.desc()).paginate(
+        page=page, per_page=app.config["PAGE_SIZE"], error_out=False
+    )
+    filters = {k: v for k, v in (("status", request.args.get("status", "")),
+                                 ("q", request.args.get("q", ""))) if v}
+    return render_template("auditor/cases.html", pager=pager, filters=filters,
+                           status_filter=request.args.get("status", ""),
+                           search=request.args.get("q", ""))
+
+
+@app.route("/auditor/case/<int:case_id>")
+@login_required
+@role_required(ROLE_AUDITOR)
+def auditor_case_detail(case_id):
+    user = current_user()
+    case = db.get_or_404(Case, case_id)
+    svc.log_case_view(user, case, "CASE_VIEWED", f"Auditor reviewed case {case.case_reference}.")
+    return render_template("auditor/case_detail.html", case=case, audit_entries=case.audit_logs[:200])
+
+
+@app.route("/auditor/audit")
+@login_required
+@role_required(ROLE_AUDITOR)
+def auditor_audit():
+    query = AuditLog.query.outerjoin(Case, AuditLog.case_id == Case.id)
+
+    reference = request.args.get("q", "").strip()
+    user_filter = request.args.get("user", "").strip()
+    action_filter = request.args.get("action", "").strip()
+    if reference:
+        query = query.filter(Case.case_reference.ilike(f"%{reference}%"))
+    if user_filter.isdigit():
+        query = query.filter(AuditLog.user_id == int(user_filter))
+    if action_filter:
+        query = query.filter(AuditLog.action == action_filter)
+
+    page = request.args.get("page", 1, type=int)
+    pager = query.order_by(AuditLog.timestamp.desc(), AuditLog.id.desc()).paginate(
+        page=page, per_page=20, error_out=False
+    )
+    users = User.query.order_by(User.full_name).all()
+    actions = [row[0] for row in db.session.query(AuditLog.action).distinct().order_by(AuditLog.action).all()]
+    filters = {k: v for k, v in (("q", reference), ("user", user_filter), ("action", action_filter)) if v}
+    return render_template("auditor/audit.html", pager=pager, users=users, actions=actions, filters=filters,
+                           reference=reference, user_filter=user_filter, action_filter=action_filter)
+
+
+@app.route("/auditor/non-registrations")
+@login_required
+@role_required(ROLE_AUDITOR)
+def auditor_refusals():
+    page = request.args.get("page", 1, type=int)
+    pager = NonRegistration.query.order_by(
+        NonRegistration.created_at.desc(), NonRegistration.id.desc()
+    ).paginate(page=page, per_page=app.config["PAGE_SIZE"], error_out=False)
+    return render_template("auditor/refusals.html", pager=pager)
 
 
 # =============================================================================
