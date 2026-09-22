@@ -45,7 +45,7 @@
     </a>
 
     <nav class="side-nav" aria-label="Main navigation">
-      {% if current_user.is_officer %}
+        {% if current_user.is_officer %}
         <a href="{{ url_for('officer_dashboard') }}" {% if active == 'dashboard' %}class="active" aria-current="page"{% endif %}>Dashboard</a>
         <a href="{{ url_for('officer_register_case') }}" {% if active == 'register' %}class="active" aria-current="page"{% endif %}>Register Case</a>
         <a href="{{ url_for('officer_cases', view='all') }}" {% if active == 'cases' %}class="active" aria-current="page"{% endif %}>My Cases</a>
@@ -53,12 +53,17 @@
         <a href="{{ url_for('officer_cases', view='attention') }}" {% if active == 'attention' %}class="active" aria-current="page"{% endif %}>Cases Requiring Attention</a>
         <a href="{{ url_for('officer_refusals') }}" {% if active == 'refusals' %}class="active" aria-current="page"{% endif %}>Non-Registrations</a>
         <a href="{{ url_for('officer_profile') }}" {% if active == 'profile' %}class="active" aria-current="page"{% endif %}>Profile</a>
-      {% else %}
+      {% elif current_user.is_supervisor %}
         <a href="{{ url_for('supervisor_dashboard') }}" {% if active == 'dashboard' %}class="active" aria-current="page"{% endif %}>Dashboard</a>
         <a href="{{ url_for('supervisor_cases') }}" {% if active == 'cases' %}class="active" aria-current="page"{% endif %}>All Cases</a>
         <a href="{{ url_for('supervisor_escalations') }}" {% if active == 'escalations' %}class="active" aria-current="page"{% endif %}>Escalations</a>
         <a href="{{ url_for('supervisor_audit') }}" {% if active == 'audit' %}class="active" aria-current="page"{% endif %}>Audit Trail</a>
         <a href="{{ url_for('supervisor_refusals') }}" {% if active == 'refusals' %}class="active" aria-current="page"{% endif %}>Non-Registrations</a>
+      {% else %}
+        <a href="{{ url_for('auditor_dashboard') }}" {% if active == 'dashboard' %}class="active" aria-current="page"{% endif %}>Dashboard</a>
+        <a href="{{ url_for('auditor_cases') }}" {% if active == 'cases' %}class="active" aria-current="page"{% endif %}>All Cases</a>
+        <a href="{{ url_for('auditor_audit') }}" {% if active == 'audit' %}class="active" aria-current="page"{% endif %}>Audit Trail</a>
+        <a href="{{ url_for('auditor_refusals') }}" {% if active == 'refusals' %}class="active" aria-current="page"{% endif %}>Non-Registrations</a>
       {% endif %}
     </nav>
 
@@ -78,7 +83,7 @@
     <header class="topbar">
       <button type="button" class="menu-toggle" id="menu-toggle" aria-controls="sidebar" aria-expanded="false">Menu</button>
       <div class="topbar-title">{% block page_title %}{% endblock %}</div>
-      <div class="topbar-note">University prototype</div>
+      <div class="topbar-note">University-SFEN </div>
     </header>
     <main class="content" id="main-content">
       {{ flash_block() }}
