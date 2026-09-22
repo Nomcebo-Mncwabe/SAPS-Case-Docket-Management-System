@@ -41,8 +41,10 @@ def env_int(name, default):
 # ----------------------------------------------------------------------------
 
 # The two formal roles from the project documentation.
+
 ROLE_OFFICER = "OFFICER"
 ROLE_SUPERVISOR = "SUPERVISOR"
+ROLE_AUDITOR = "AUDITOR"
 
 # The ONLY three case statuses (as required by the documentation).
 STATUS_OPEN = "OPEN"
