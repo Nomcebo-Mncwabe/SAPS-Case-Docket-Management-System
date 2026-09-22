@@ -25,6 +25,7 @@ from config import (
     CASE_STATUSES,
     ESCALATION_PENDING,
     NON_REGISTRATION_REASONS,
+    ROLE_AUDITOR,
     ROLE_OFFICER,
     ROLE_SUPERVISOR,
     STATUS_CLOSED,
@@ -80,10 +81,18 @@ class User(db.Model):
     @property
     def is_supervisor(self):
         return self.role == ROLE_SUPERVISOR
+        
+    @property
+    def is_auditor(self):
+        return self.role == ROLE_AUDITOR
 
     @property
     def role_label(self):
-        return "CSC Officer" if self.is_officer else "CSC Supervisor"
+        if self.is_officer:
+            return "CSC Officer"
+        if self.is_supervisor:
+            return "CSC Supervisor"
+        return "Internal Auditor / IPID Officer"
 
     def __repr__(self):
         return f"<User {self.username} ({self.role})>"
