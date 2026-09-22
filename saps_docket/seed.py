@@ -10,6 +10,7 @@ so the system can be demonstrated immediately.
     Officer     username: officer2      password: password123
     Officer     username: officer3      password: password123
     Supervisor  username: supervisor1   password: password123
+    Auditor     username: auditor1      password: password123
 
 The demo cases use example.com e-mail addresses. To test the OTP with a REAL
 inbox, register a new case yourself using your own e-mail address.
@@ -18,6 +19,7 @@ inbox, register a new case yourself using your own e-mail address.
 from datetime import timedelta
 
 from config import (
+    ROLE_AUDITOR,
     ROLE_OFFICER,
     ROLE_SUPERVISOR,
     STATUS_CLOSED,
@@ -40,6 +42,7 @@ def seed_users():
         ("Sipho Dlamini", "officer2", "officer2@example.com", ROLE_OFFICER),
         ("Lerato Naidoo", "officer3", "officer3@example.com", ROLE_OFFICER),
         ("Captain Pieter Venter", "supervisor1", "supervisor1@example.com", ROLE_SUPERVISOR),
+        ("Nomvula Dube", "auditor1", "auditor1@example.com", ROLE_AUDITOR),
     ]
     for full_name, username, email, role in people:
         user = User(full_name=full_name, username=username, email=email, role=role, is_active=True)
