@@ -1,0 +1,55 @@
+{# admin/user_form.html - MODULE A: System Administrator - create a user account #}
+{% extends "base.html" %}
+{% from "_macros.html" import csrf %}
+{% set layout = 'app' %}
+{% set active = 'users' %}
+{% block title %}Create user{% endblock %}
+{% block page_title %}Create user{% endblock %}
+
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>Create user</h1>
+    <p class="muted">A random temporary password is generated and shown once after the account is created - hand it to the user securely.</p>
+  </div>
+</div>
+
+<section class="panel panel-flush" style="padding: 22px;">
+  <form method="post" action="{{ url_for('admin_user_new') }}" class="form form-wide" novalidate>
+    {{ csrf() }}
+
+    <div class="grid-2">
+      <div class="field">
+        <label for="full_name">Full name <span class="req" aria-hidden="true">*</span></label>
+        <input type="text" id="full_name" name="full_name" maxlength="120" value="{{ form.get('full_name', '') }}" required>
+      </div>
+      <div class="field">
+        <label for="username">Username <span class="req" aria-hidden="true">*</span></label>
+        <input type="text" id="username" name="username" maxlength="50" value="{{ form.get('username', '') }}" required>
+        <p class="hint">3-50 characters: letters, numbers, dots, dashes or underscores.</p>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="field">
+        <label for="email">E-mail address <span class="req" aria-hidden="true">*</span></label>
+        <input type="email" id="email" name="email" maxlength="120" value="{{ form.get('email', '') }}" required>
+      </div>
+      <div class="field">
+        <label for="role">Role <span class="req" aria-hidden="true">*</span></label>
+        <select id="role" name="role" required>
+          <option value="">Choose a role</option>
+          {% for r in roles %}
+            <option value="{{ r }}" {% if form.get('role', '') == r %}selected{% endif %}>{{ r|title }}</option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+
+    <div class="button-row">
+      <button type="submit" class="btn btn-gold btn-large">Create user</button>
+      <a class="btn btn-ghost btn-large" href="{{ url_for('admin_users') }}">Cancel</a>
+    </div>
+  </form>
+</section>
+{% endblock %}
