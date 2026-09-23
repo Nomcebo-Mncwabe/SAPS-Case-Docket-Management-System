@@ -34,6 +34,9 @@
   <a class="stat" href="{{ url_for('auditor_refusals') }}">
     <span class="stat-number">{{ stats.refusals }}</span><span class="stat-label">Non-registrations</span>
   </a>
+  <a class="stat stat-attention" href="{{ url_for('auditor_findings', status='RESPONDED') }}">
+    <span class="stat-number">{{ stats.findings_to_review }}</span><span class="stat-label">Findings to review</span>
+  </a>
 </section>
 
 <div class="two-col">
