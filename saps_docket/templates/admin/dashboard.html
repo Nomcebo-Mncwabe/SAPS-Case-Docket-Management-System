@@ -1,0 +1,76 @@
+{# admin/dashboard.html - MODULE A: System Administrator overview #}
+{% extends "base.html" %}
+{% from "_macros.html" import audit_table, user_status_badge %}
+{% set layout = 'app' %}
+{% set active = 'dashboard' %}
+{% block title %}Admin dashboard{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>System administration</h1>
+    <p class="muted">Users, system configuration, reference data and system maintenance.</p>
+  </div>
+  <a class="btn btn-primary" href="{{ url_for('admin_user_new') }}">Create user</a>
+</div>
+
+<section class="stat-grid" aria-label="System-wide summary">
+  <a class="stat" href="{{ url_for('admin_users') }}">
+    <span class="stat-number">{{ stats.total_users }}</span><span class="stat-label">Total users</span>
+  </a>
+  <a class="stat stat-open" href="{{ url_for('admin_users', status='active') }}">
+    <span class="stat-number">{{ stats.active_users }}</span><span class="stat-label">Active</span>
+  </a>
+  <a class="stat stat-attention" href="{{ url_for('admin_users', status='disabled') }}">
+    <span class="stat-number">{{ stats.disabled_users }}</span><span class="stat-label">Disabled</span>
+  </a>
+  <a class="stat" href="{{ url_for('admin_users') }}">
+    <span class="stat-number">{{ stats.total_cases }}</span><span class="stat-label">Total cases</span>
+  </a>
+  <a class="stat stat-attention" href="{{ url_for('admin_maintenance') }}">
+    <span class="stat-number">{{ stats.open_findings }}</span><span class="stat-label">Open audit findings</span>
+  </a>
+  <a class="stat" href="{{ url_for('admin_maintenance') }}">
+    <span class="stat-number">{{ stats.audit_entries }}</span><span class="stat-label">Audit entries</span>
+  </a>
+</section>
+
+<div class="two-col">
+  <section class="panel" aria-labelledby="roles-heading">
+    <h2 id="roles-heading">Users by role</h2>
+    <dl class="kv kv-grid">
+      <div><dt>CSC Officers</dt><dd>{{ stats.officers }}</dd></div>
+      <div><dt>CSC Supervisors</dt><dd>{{ stats.supervisors }}</dd></div>
+      <div><dt>Internal Auditors / IPID</dt><dd>{{ stats.auditors }}</dd></div>
+      <div><dt>System Administrators</dt><dd>{{ stats.admins }}</dd></div>
+    </dl>
+    <a class="btn btn-ghost btn-small" href="{{ url_for('admin_users') }}">Manage users</a>
+  </section>
+
+  <section class="panel" aria-labelledby="recent-users-heading">
+    <h2 id="recent-users-heading">Most recently created users</h2>
+    {% if recent_users %}
+    <ul class="item-list">
+      {% for u in recent_users %}
+      <li>
+        <div>
+          <a href="{{ url_for('admin_user_detail', user_id=u.id) }}">{{ u.full_name }}</a>
+          <div class="muted small">{{ u.username }} &middot; {{ u.role_label }}</div>
+        </div>
+        {{ user_status_badge(u) }}
+      </li>
+      {% endfor %}
+    </ul>
+    {% else %}
+      <p class="empty">No users found.</p>
+    {% endif %}
+  </section>
+</div>
+
+<section class="panel" aria-labelledby="audit-heading">
+  <h2 id="audit-heading">Most recent audit entries</h2>
+  {{ audit_table(recent_audit, show_case=True) }}
+  <a class="btn btn-ghost btn-small" href="{{ url_for('admin_maintenance') }}">System maintenance &amp; full export</a>
+</section>
+{% endblock %}
