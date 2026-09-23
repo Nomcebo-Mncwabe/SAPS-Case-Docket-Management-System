@@ -10,6 +10,21 @@
   {% if case.is_escalated %}<span class="badge badge-escalated" title="No recent activity - waiting for supervisor review">ESCALATED</span>{% endif %}
 {% endmacro %}
 
+{# Audit finding status badge (OPEN / RESPONDED / CLOSED). #}
+{% macro finding_status_badge(status) %}
+  <span class="badge badge-{{ status|lower }}">{{ status }}</span>
+{% endmacro %}
+
+{# Audit finding severity badge (Low / Medium / High / Critical). #}
+{% macro severity_badge(severity) %}
+  <span class="badge badge-{{ severity|lower }}">{{ severity }}</span>
+{% endmacro %}
+
+{# User account status badge (Active / Disabled). #}
+{% macro user_status_badge(user) %}
+  {% if user.is_active %}<span class="badge badge-active">ACTIVE</span>{% else %}<span class="badge badge-disabled">DISABLED</span>{% endif %}
+{% endmacro %}
+
 {# Page links. 'filters' keeps the search/status filters when moving between pages. #}
 {% macro pagination(pager, endpoint, filters={}) %}
   {% if pager.pages > 1 %}
