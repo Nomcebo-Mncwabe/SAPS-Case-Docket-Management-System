@@ -1,0 +1,79 @@
+{# admin/reference_data.html - MODULE A: System Administrator - manage reference data #}
+{% extends "base.html" %}
+{% from "_macros.html" import csrf %}
+{% set layout = 'app' %}
+{% set active = 'reference' %}
+{% block title %}Reference data{% endblock %}
+{% block page_title %}Reference data{% endblock %}
+
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>Reference data</h1>
+    <p class="muted">Controls the drop-down lists officers see when registering cases and recording non-registrations. Deactivating an item hides it from new forms without affecting existing records.</p>
+  </div>
+</div>
+
+<nav class="tabs" aria-label="Reference data category">
+  {% for cat_key, cat_label in categories.items() %}
+    <a href="{{ url_for('admin_reference_data', category=cat_key) }}" {% if category == cat_key %}class="active" aria-current="page"{% endif %}>{{ cat_label }}</a>
+  {% endfor %}
+</nav>
+
+<section class="panel" aria-labelledby="add-heading">
+  <h2 id="add-heading">Add new item</h2>
+  <form method="post" action="{{ url_for('admin_reference_data_new') }}" class="form-inline">
+    {{ csrf() }}
+    <input type="hidden" name="category" value="{{ category }}">
+    {% if needs_code %}
+    <div class="field">
+      <label for="code">Code</label>
+      <input type="text" id="code" name="code" maxlength="20" placeholder="NR07" required>
+    </div>
+    {% endif %}
+    <div class="field">
+      <label for="label">Label</label>
+      <input type="text" id="label" name="label" maxlength="150" placeholder="Description shown to officers" required>
+    </div>
+    <button type="submit" class="btn btn-primary">Add item</button>
+  </form>
+</section>
+
+<section class="panel panel-flush">
+  {% if items %}
+  <div class="table-wrap">
+    <table class="table">
+      <thead>
+        <tr>
+          {% if needs_code %}<th scope="col">Code</th>{% endif %}
+          <th scope="col">Label</th>
+          <th scope="col">Status</th>
+          <th scope="col"><span class="visually-hidden">Actions</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in items %}
+        <tr>
+          {% if needs_code %}<td class="nowrap">{{ item.code }}</td>{% endif %}
+          <td>{{ item.label }}</td>
+          <td>
+            {% if item.is_active %}<span class="badge badge-active">ACTIVE</span>{% else %}<span class="badge badge-disabled">INACTIVE</span>{% endif %}
+          </td>
+          <td class="nowrap">
+            <form method="post" action="{{ url_for('admin_reference_data_toggle', item_id=item.id) }}" style="display:inline">
+              {{ csrf() }}
+              <button type="submit" class="btn btn-small {{ 'btn-danger' if item.is_active else 'btn-ghost' }}">
+                {{ 'Deactivate' if item.is_active else 'Reactivate' }}
+              </button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+    <p class="empty">No reference-data items in this category yet.</p>
+  {% endif %}
+</section>
+{% endblock %}
