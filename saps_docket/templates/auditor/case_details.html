@@ -16,7 +16,27 @@
       &nbsp;&middot;&nbsp; Last activity {{ case.last_activity_at|ago }}
     </p>
   </div>
+  <div class="button-row">
+    <a class="btn btn-ghost" href="{{ url_for('auditor_case_export', case_id=case.id) }}">Export report</a>
+    <a class="btn btn-primary" href="{{ url_for('auditor_flag_case', case_id=case.id) }}">Flag for review</a>
+  </div>
 </div>
+
+{% if case.findings %}
+<section class="panel" aria-labelledby="findings-heading">
+  <h2 id="findings-heading">Audit findings on this case</h2>
+  <ul class="item-list">
+    {% for f in case.findings %}
+    <li>
+      <div>
+        <div><a href="{{ url_for('auditor_finding_detail', finding_id=f.id) }}">{{ f.reference }}</a> &ndash; {{ f.title }}</div>
+        <div class="muted small">{{ f.status }} &middot; {{ f.severity }} &middot; raised {{ f.created_at|dt }}</div>
+      </div>
+    </li>
+    {% endfor %}
+  </ul>
+</section>
+{% endif %}
 
 <div class="two-col two-col-wide">
   <div>
