@@ -20,6 +20,8 @@ Design rule: functions that change data COMMIT ONCE at the end, so a case,
 its activity and its audit entry are saved together or not at all.
 """
 
+import csv
+import io
 import re
 import secrets
 import smtplib
@@ -27,27 +29,43 @@ import ssl
 from datetime import datetime, timedelta
 from email.message import EmailMessage
 
-from flask import current_app, has_request_context, request, url_for
+from flask import Response, current_app, has_request_context, request, url_for
+from sqlalchemy import func
 
 from config import (
     ALLOWED_STATUS_TRANSITIONS,
     CASE_STATUSES,
+    CONFIGURABLE_SETTINGS,
     ESCALATION_PENDING,
     ESCALATION_REVIEWED,
+    FINDING_CLOSED,
+    FINDING_OPEN,
+    FINDING_RESPONDED,
+    FINDING_SEVERITIES,
     INCIDENT_TYPES,
     MANUAL_ACTIVITY_TYPES,
     NON_REGISTRATION_REASONS,
+    REFERENCE_CATEGORY_INCIDENT_TYPE,
+    REFERENCE_CATEGORY_NON_REGISTRATION,
+    ROLE_ADMIN,
+    ROLE_AUDITOR,
+    ROLE_OFFICER,
+    ROLE_SUPERVISOR,
     STATUS_CLOSED,
     STATUS_OPEN,
     SUPERVISOR_ACTIONS,
 )
 from models import (
     OTP,
+    AuditFinding,
     AuditLog,
     Case,
     CaseActivity,
     Escalation,
     NonRegistration,
+    ReferenceData,
+    SystemSetting,
+    User,
     db,
     utcnow,
 )
@@ -666,7 +684,7 @@ def validate_case_form(form, include_statement=True):
     clean["incident_location"] = location
 
     incident_type = form.get("incident_type", "").strip()
-    if incident_type not in INCIDENT_TYPES:
+    if incident_type not in get_incident_types():
         errors.append("Please choose an incident type from the list.")
     clean["incident_type"] = incident_type
 
@@ -732,7 +750,7 @@ def validate_non_registration_form(form):
     clean["incident_summary"] = summary
 
     reason_code = form.get("reason_code", "").strip()
-    if reason_code not in NON_REGISTRATION_REASONS:
+    if reason_code not in get_non_registration_reasons():
         errors.append("You must choose a coded reason for not registering the report.")
     clean["reason_code"] = reason_code
 
@@ -782,3 +800,395 @@ def validate_escalation_review_form(form, officer_ids):
             errors.append("The officer chosen for re-assignment is not valid.")
 
     return clean, errors
+
+
+# =============================================================================
+# 10. SYSTEM ADMINISTRATION - USER MANAGEMENT
+#     (Create users, disable users, reset passwords, change user roles)
+# =============================================================================
+USER_ROLES = [ROLE_OFFICER, ROLE_SUPERVISOR, ROLE_AUDITOR, ROLE_ADMIN]
+
+# Characters chosen to avoid look-alikes (0/O, 1/l/I) when a temporary
+# password has to be read out loud or copied from a screen.
+_TEMP_PASSWORD_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789"
+
+
+def generate_temp_password(length=10):
+    """A random temporary password that always satisfies the complexity rule (letters + numbers)."""
+    while True:
+        candidate = "".join(secrets.choice(_TEMP_PASSWORD_ALPHABET) for _ in range(length))
+        if re.search(r"[A-Za-z]", candidate) and re.search(r"\d", candidate):
+            return candidate
+
+
+def validate_user_form(form, editing_user_id=None):
+    """Validate the admin's Create/Edit User form. Returns (clean, errors)."""
+    errors = []
+    clean = {}
+
+    full_name = form.get("full_name", "").strip()
+    if len(full_name) < 2 or len(full_name) > 120:
+        errors.append("Full name is required (2 to 120 characters).")
+    clean["full_name"] = full_name
+
+    username = form.get("username", "").strip().lower()
+    if not re.match(r"^[a-z0-9._\-]{3,50}$", username):
+        errors.append("Username must be 3 to 50 characters (letters, numbers, dots, dashes or underscores only).")
+    else:
+        existing = User.query.filter(func.lower(User.username) == username).first()
+        if existing and existing.id != editing_user_id:
+            errors.append(f"The username '{username}' is already in use.")
+    clean["username"] = username
+
+    email = form.get("email", "").strip().lower()
+    if not EMAIL_PATTERN.match(email) or len(email) > 120:
+        errors.append("A valid e-mail address is required.")
+    else:
+        existing = User.query.filter(func.lower(User.email) == email).first()
+        if existing and existing.id != editing_user_id:
+            errors.append(f"The e-mail address '{email}' is already in use.")
+    clean["email"] = email
+
+    role = form.get("role", "").strip().upper()
+    if role not in USER_ROLES:
+        errors.append("Please choose a valid role for this account.")
+    clean["role"] = role
+
+    return clean, errors
+
+
+def create_user(actor, clean):
+    """
+    Admin creates a new user account with a random temporary password.
+    Returns (user, temp_password) - the plain password is only ever available
+    here, at creation time, so the admin can hand it to the new user.
+    """
+    temp_password = generate_temp_password()
+    user = User(
+        full_name=clean["full_name"],
+        username=clean["username"],
+        email=clean["email"],
+        role=clean["role"],
+        is_active=True,
+    )
+    user.set_password(temp_password)
+    db.session.add(user)
+    db.session.flush()  # so user.id exists for the audit entry
+    log_audit(
+        actor, "USER_CREATED",
+        f"{actor.full_name} created the account '{user.username}' ({user.role_label}).",
+    )
+    db.session.commit()
+    return user, temp_password
+
+
+def set_user_active(user, active, actor):
+    """Enable or disable a user account. A disabled user cannot log in."""
+    user.is_active = active
+    action = "USER_ENABLED" if active else "USER_DISABLED"
+    verb = "enabled" if active else "disabled"
+    log_audit(actor, action, f"{actor.full_name} {verb} the account '{user.username}'.")
+    db.session.commit()
+
+
+def change_user_role(user, new_role, actor):
+    """Change a user's role (e.g. promote an Officer to Supervisor)."""
+    old_role = user.role
+    user.role = new_role
+    log_audit(
+        actor, "USER_ROLE_CHANGED",
+        f"{actor.full_name} changed the role of '{user.username}' from {old_role} to {new_role}.",
+    )
+    db.session.commit()
+
+
+def reset_user_password(user, actor):
+    """
+    Reset a user's password to a new random temporary password.
+    Returns the plain password (shown to the admin ONCE - it is never stored
+    or logged anywhere; only its hash is kept).
+    """
+    temp_password = generate_temp_password()
+    user.set_password(temp_password)
+    log_audit(actor, "PASSWORD_RESET_BY_ADMIN", f"{actor.full_name} reset the password for '{user.username}'.")
+    db.session.commit()
+    return temp_password
+
+
+# =============================================================================
+# 11. SYSTEM ADMINISTRATION - SYSTEM CONFIGURATION
+# =============================================================================
+def get_setting(key, default=None, cast=str):
+    """Read one admin-configured override from the database (or `default` if never set)."""
+    row = db.session.get(SystemSetting, key)
+    if row is None:
+        return default
+    try:
+        if cast is bool:
+            return row.value.strip().lower() in ("1", "true", "yes", "on")
+        return cast(row.value)
+    except (TypeError, ValueError):
+        return default
+
+
+def set_setting(key, value, actor=None):
+    """Create or update one admin-configured override."""
+    row = db.session.get(SystemSetting, key)
+    if row is None:
+        row = SystemSetting(key=key, value=str(value))
+        db.session.add(row)
+    else:
+        row.value = str(value)
+    row.updated_at = utcnow()
+    row.updated_by_id = actor.id if actor else None
+    return row
+
+
+def apply_dynamic_settings(app):
+    """
+    Copy every admin-configured override on top of the .env-based Config values.
+    Called once per request (see app.py) so the whole application - standstill
+    detection, OTP rules, login lockout, pagination, and so on - always uses
+    the latest value without every call site having to know where it came from.
+    """
+    for key, meta in CONFIGURABLE_SETTINGS.items():
+        cast = bool if meta["type"] == "bool" else int
+        value = get_setting(key, default=None, cast=cast)
+        if value is not None:
+            app.config[key] = value
+
+
+def validate_configuration_form(form):
+    """Validate the admin's System Configuration form. Returns (clean, errors)."""
+    errors = []
+    clean = {}
+    for key, meta in CONFIGURABLE_SETTINGS.items():
+        if meta["type"] == "bool":
+            clean[key] = form.get(key) is not None  # checkbox: present = checked
+            continue
+        raw = form.get(key, "").strip()
+        try:
+            value = int(raw)
+            if value < meta["min"] or value > meta["max"]:
+                errors.append(f"{meta['label']} must be between {meta['min']} and {meta['max']}.")
+            else:
+                clean[key] = value
+        except ValueError:
+            errors.append(f"{meta['label']} must be a whole number.")
+    return clean, errors
+
+
+# =============================================================================
+# 12. SYSTEM ADMINISTRATION - REFERENCE DATA
+# =============================================================================
+def get_incident_types():
+    """Active incident types, from the database if an admin has configured any, else the built-in defaults."""
+    rows = (
+        ReferenceData.query.filter_by(category=REFERENCE_CATEGORY_INCIDENT_TYPE, is_active=True)
+        .order_by(ReferenceData.sort_order, ReferenceData.label)
+        .all()
+    )
+    return [r.label for r in rows] if rows else list(INCIDENT_TYPES)
+
+
+def get_non_registration_reasons():
+    """Active coded non-registration reasons, as an ordered {code: label} dict."""
+    rows = (
+        ReferenceData.query.filter_by(category=REFERENCE_CATEGORY_NON_REGISTRATION, is_active=True)
+        .order_by(ReferenceData.sort_order, ReferenceData.label)
+        .all()
+    )
+    return {r.code: r.label for r in rows} if rows else dict(NON_REGISTRATION_REASONS)
+
+
+def seed_reference_data():
+    """Populate reference_data from the built-in defaults, once, so the admin has something to edit."""
+    if ReferenceData.query.count() > 0:
+        return
+    for i, label in enumerate(INCIDENT_TYPES):
+        db.session.add(ReferenceData(category=REFERENCE_CATEGORY_INCIDENT_TYPE, label=label,
+                                      is_active=True, sort_order=i))
+    for i, (code, label) in enumerate(NON_REGISTRATION_REASONS.items()):
+        db.session.add(ReferenceData(category=REFERENCE_CATEGORY_NON_REGISTRATION, code=code,
+                                      label=label, is_active=True, sort_order=i))
+    db.session.commit()
+
+
+def add_reference_data(category, code, label, actor):
+    """Add one reference-data item (a new incident type or coded reason)."""
+    item = ReferenceData(category=category, code=code or None, label=label, is_active=True,
+                          created_by_id=actor.id if actor else None)
+    db.session.add(item)
+    db.session.flush()
+    log_audit(actor, "REFERENCE_DATA_ADDED", f"{actor.full_name} added '{label}' to {category}.")
+    db.session.commit()
+    return item
+
+
+def toggle_reference_data(item, actor):
+    """Activate/deactivate a reference-data item. Deactivating hides it from new forms without deleting history."""
+    item.is_active = not item.is_active
+    verb = "reactivated" if item.is_active else "deactivated"
+    log_audit(actor, "REFERENCE_DATA_UPDATED", f"{actor.full_name} {verb} '{item.label}' ({item.category}).")
+    db.session.commit()
+
+
+# =============================================================================
+# 13. AUDIT FINDING WORKFLOW  (AUDITOR -> SUPERVISOR -> AUDITOR)
+# =============================================================================
+def validate_finding_form(form):
+    """Validate the auditor's 'Flag for Review' form. Returns (clean, errors)."""
+    errors = []
+    clean = {}
+
+    title = form.get("title", "").strip()
+    if len(title) < 5 or len(title) > 150:
+        errors.append("Finding title is required (5 to 150 characters).")
+    clean["title"] = title
+
+    severity = form.get("severity", "").strip().title()
+    if severity not in FINDING_SEVERITIES:
+        errors.append("Please choose a severity.")
+    clean["severity"] = severity
+
+    description = form.get("description", "").strip()
+    if len(description) < 20:
+        errors.append("Please describe the finding in at least 20 characters.")
+    elif len(description) > 3000:
+        errors.append("The description may not be longer than 3000 characters.")
+    clean["description"] = description
+
+    return clean, errors
+
+
+def build_finding_reference(record_id, year):
+    return f"AF-{year}-{record_id:05d}"
+
+
+def create_finding(case, auditor, clean):
+    """AUDITOR flags a case for review, creating a new open finding."""
+    now = utcnow()
+    finding = AuditFinding(
+        case_id=case.id,
+        reference="PENDING-" + secrets.token_hex(8),
+        title=clean["title"],
+        description=clean["description"],
+        severity=clean["severity"],
+        status=FINDING_OPEN,
+        created_by_id=auditor.id,
+        created_at=now,
+    )
+    db.session.add(finding)
+    db.session.flush()  # so finding.id exists for the reference
+    finding.reference = build_finding_reference(finding.id, now.year)
+    log_audit(
+        auditor, "AUDIT_FINDING_CREATED",
+        f"{auditor.full_name} flagged case {case.case_reference} for review "
+        f"({finding.reference}, severity {finding.severity}): {clean['title']}",
+        case,
+    )
+    db.session.commit()
+    return finding
+
+
+def respond_to_finding(finding, supervisor, response_text):
+    """SUPERVISOR responds to / investigates an open finding."""
+    finding.response_text = response_text
+    finding.responded_by_id = supervisor.id
+    finding.responded_at = utcnow()
+    finding.status = FINDING_RESPONDED
+    log_audit(
+        supervisor, "AUDIT_FINDING_RESPONDED",
+        f"{supervisor.full_name} responded to finding {finding.reference} on case {finding.case.case_reference}.",
+        finding.case,
+    )
+    db.session.commit()
+
+
+def close_finding(finding, auditor, review_notes):
+    """AUDITOR reviews the supervisor's response and closes the finding."""
+    finding.review_notes = review_notes
+    finding.reviewed_by_id = auditor.id
+    finding.closed_at = utcnow()
+    finding.status = FINDING_CLOSED
+    log_audit(
+        auditor, "AUDIT_FINDING_CLOSED",
+        f"{auditor.full_name} reviewed the response and closed finding {finding.reference}.",
+        finding.case,
+    )
+    db.session.commit()
+
+
+def reopen_finding(finding, auditor, review_notes):
+    """AUDITOR reviews the response but is not satisfied - sends it back for a further response."""
+    finding.review_notes = review_notes
+    finding.reviewed_by_id = auditor.id
+    finding.responded_at = None
+    finding.status = FINDING_OPEN
+    log_audit(
+        auditor, "AUDIT_FINDING_REOPENED",
+        f"{auditor.full_name} requested a further response for finding {finding.reference}: {review_notes}",
+        finding.case,
+    )
+    db.session.commit()
+
+
+# =============================================================================
+# 14. CSV EXPORTS  (auditor 'Export Report', admin audit-trail export)
+# =============================================================================
+def build_case_report_csv(case):
+    """A full, read-only case report (details + timeline + audit trail) as a CSV download."""
+    output = io.StringIO()
+    writer = csv.writer(output)
+
+    writer.writerow(["Case report", case.case_reference])
+    writer.writerow(["Generated", utcnow().isoformat() + "Z"])
+    writer.writerow([])
+    writer.writerow(["Field", "Value"])
+    writer.writerow(["Case reference", case.case_reference])
+    writer.writerow(["Status", case.status])
+    writer.writerow(["Complainant", case.complainant_name])
+    writer.writerow(["Complainant e-mail", case.complainant_email])
+    writer.writerow(["Complainant phone", case.complainant_phone or ""])
+    writer.writerow(["Incident type", case.incident_type])
+    writer.writerow(["Incident date", case.incident_date.isoformat()])
+    writer.writerow(["Incident location", case.incident_location])
+    writer.writerow(["Registered by", case.registered_by.full_name if case.registered_by else ""])
+    writer.writerow(["Assigned officer", case.assigned_officer.full_name if case.assigned_officer else ""])
+    writer.writerow(["Registered at", case.created_at.isoformat()])
+    writer.writerow(["Last activity", case.last_activity_at.isoformat()])
+    if case.closed_at:
+        writer.writerow(["Closed at", case.closed_at.isoformat()])
+
+    writer.writerow([])
+    writer.writerow(["Timeline (oldest first)"])
+    writer.writerow(["When", "Activity type", "Description", "Recorded by"])
+    for a in reversed(case.activities):
+        writer.writerow([a.created_at.isoformat(), a.activity_type, a.description,
+                          a.officer.full_name if a.officer else ""])
+
+    writer.writerow([])
+    writer.writerow(["Audit trail (oldest first)"])
+    writer.writerow(["When", "Actor", "Action", "Description"])
+    for e in reversed(case.audit_logs):
+        writer.writerow([e.timestamp.isoformat(), e.actor_name, e.action, e.description])
+
+    response = Response(output.getvalue(), mimetype="text/csv")
+    response.headers["Content-Disposition"] = f"attachment; filename={case.case_reference}-report.csv"
+    return response
+
+
+def build_audit_log_csv(entries):
+    """A CSV export of a set of audit-trail entries (used by System Maintenance)."""
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(["When", "Actor", "Action", "Case", "IP address", "Description"])
+    for e in entries:
+        writer.writerow([
+            e.timestamp.isoformat(), e.actor_name, e.action,
+            e.case.case_reference if e.case else "", e.ip_address or "", e.description,
+        ])
+    response = Response(output.getvalue(), mimetype="text/csv")
+    response.headers["Content-Disposition"] = "attachment; filename=audit-trail-export.csv"
+    return response
+
