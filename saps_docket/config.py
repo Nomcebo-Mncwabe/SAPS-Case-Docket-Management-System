@@ -45,6 +45,8 @@ def env_int(name, default):
 ROLE_OFFICER = "OFFICER"
 ROLE_SUPERVISOR = "SUPERVISOR"
 ROLE_AUDITOR = "AUDITOR"
+ROLE_ADMIN = "ADMIN"
+ALL_ROLES = [ROLE_OFFICER, ROLE_SUPERVISOR, ROLE_AUDITOR, ROLE_ADMIN]
 
 # The ONLY three case statuses (as required by the documentation).
 STATUS_OPEN = "OPEN"
@@ -134,6 +136,79 @@ SUPERVISOR_ACTIONS = [
     "Case reviewed - progress is acceptable",
     "Referred to station management",
 ]
+
+# =============================================================================
+# AUDIT FINDINGS  (AUDITOR -> SUPERVISOR -> AUDITOR workflow)
+# =============================================================================
+# AUDITOR finds a problem on a case ("Flag for Review") and creates a finding.
+# SUPERVISOR responds / investigates. AUDITOR reviews the response and either
+# closes the finding or sends it back for a further response.
+FINDING_OPEN = "OPEN"                 # waiting for the supervisor to respond
+FINDING_RESPONDED = "RESPONDED"       # supervisor responded, waiting for the auditor to review
+FINDING_CLOSED = "CLOSED"             # auditor reviewed the response and closed the finding
+FINDING_STATUSES = [FINDING_OPEN, FINDING_RESPONDED, FINDING_CLOSED]
+FINDING_SEVERITIES = ["Low", "Medium", "High", "Critical"]
+
+# =============================================================================
+# REFERENCE DATA  (managed by the System Administrator)
+# =============================================================================
+REFERENCE_CATEGORY_INCIDENT_TYPE = "INCIDENT_TYPE"
+REFERENCE_CATEGORY_NON_REGISTRATION = "NON_REGISTRATION_REASON"
+REFERENCE_CATEGORIES = {
+    REFERENCE_CATEGORY_INCIDENT_TYPE: "Incident types (Register Case form)",
+    REFERENCE_CATEGORY_NON_REGISTRATION: "Non-registration reasons (coded reasons)",
+}
+
+# =============================================================================
+# SYSTEM CONFIGURATION  (managed by the System Administrator)
+# =============================================================================
+# Every key here can be overridden by an Admin on the "System configuration"
+# page. An override is stored in the system_settings table and copied over the
+# matching Config value at the start of every request (see apply_dynamic_settings
+# in services.py), so the rest of the application never has to know the value
+# might have been changed by an admin instead of the .env file.
+CONFIGURABLE_SETTINGS = {
+    "CASE_STANDSTILL_DAYS": {
+        "type": "int", "min": 1, "max": 90,
+        "label": "Case standstill threshold (days)",
+        "help": "A case with no recorded activity for this many days is automatically flagged for supervisor attention.",
+    },
+    "OTP_EXPIRY_MINUTES": {
+        "type": "int", "min": 2, "max": 60,
+        "label": "Citizen OTP expiry (minutes)",
+        "help": "How long a one-time PIN e-mailed to a citizen remains valid.",
+    },
+    "OTP_MAX_ATTEMPTS": {
+        "type": "int", "min": 1, "max": 10,
+        "label": "Citizen OTP maximum attempts",
+        "help": "How many wrong PIN entries are allowed before the OTP is cancelled.",
+    },
+    "OTP_RESEND_COOLDOWN_SECONDS": {
+        "type": "int", "min": 10, "max": 600,
+        "label": "Citizen OTP resend cooldown (seconds)",
+        "help": "Minimum time between two OTP requests for the same case.",
+    },
+    "LOGIN_MAX_ATTEMPTS": {
+        "type": "int", "min": 3, "max": 20,
+        "label": "Login attempts before lockout",
+        "help": "How many wrong passwords are allowed before a login is temporarily locked.",
+    },
+    "LOGIN_LOCKOUT_MINUTES": {
+        "type": "int", "min": 1, "max": 120,
+        "label": "Login lockout duration (minutes)",
+        "help": "How long a login stays locked after too many failed attempts.",
+    },
+    "PAGE_SIZE": {
+        "type": "int", "min": 5, "max": 100,
+        "label": "Records per page",
+        "help": "How many rows are shown per page on case, audit and record lists.",
+    },
+    "SHOW_OFFICER_NAME_TO_CITIZEN": {
+        "type": "bool",
+        "label": "Show officer name to citizens",
+        "help": "When switched off, citizens see 'An officer has been assigned' instead of the officer's name.",
+    },
+}
 
 
 class Config:
