@@ -24,7 +24,10 @@ from werkzeug.security import check_password_hash, generate_password_hash
 from config import (
     CASE_STATUSES,
     ESCALATION_PENDING,
+    FINDING_OPEN,
     NON_REGISTRATION_REASONS,
+    REFERENCE_CATEGORY_NON_REGISTRATION,
+    ROLE_ADMIN,
     ROLE_AUDITOR,
     ROLE_OFFICER,
     ROLE_SUPERVISOR,
@@ -87,11 +90,17 @@ class User(db.Model):
         return self.role == ROLE_AUDITOR
 
     @property
+    def is_admin(self):
+        return self.role == ROLE_ADMIN
+
+    @property
     def role_label(self):
         if self.is_officer:
             return "CSC Officer"
         if self.is_supervisor:
             return "CSC Supervisor"
+        if self.is_admin:
+            return "System Administrator"
         return "Internal Auditor / IPID Officer"
 
     def __repr__(self):
@@ -150,6 +159,11 @@ class Case(db.Model):
         "Escalation",
         back_populates="case",
         order_by="[Escalation.created_at.desc(), Escalation.id.desc()]",
+    )
+    findings = db.relationship(
+        "AuditFinding",
+        back_populates="case",
+        order_by="[AuditFinding.created_at.desc(), AuditFinding.id.desc()]",
     )
 
     @property
@@ -296,7 +310,107 @@ class NonRegistration(db.Model):
 
     @property
     def reason_label(self):
-        return NON_REGISTRATION_REASONS.get(self.reason_code, self.reason_code)
+        if self.reason_code in NON_REGISTRATION_REASONS:
+            return NON_REGISTRATION_REASONS[self.reason_code]
+        # Fall back to an admin-added reference-data reason not in the built-in list.
+        row = ReferenceData.query.filter_by(
+            category=REFERENCE_CATEGORY_NON_REGISTRATION, code=self.reason_code
+        ).first()
+        return row.label if row else self.reason_code
+
+
+# =============================================================================
+# AUDIT FINDING  (AUDITOR -> SUPERVISOR -> AUDITOR workflow)
+# =============================================================================
+# AUDITOR finds a problem on a case ("Flag for Review") -> creates a finding.
+#            |
+#          SUPERVISOR responds / investigates.
+#            |
+#          AUDITOR reviews the response -> finding closed (or sent back for
+#          a further response, which re-opens it).
+class AuditFinding(db.Model):
+    __tablename__ = "audit_findings"
+    __table_args__ = {"sqlite_autoincrement": True}
+
+    id = db.Column(db.Integer, primary_key=True)
+    reference = db.Column(db.String(30), unique=True, nullable=False, index=True)
+    case_id = db.Column(db.Integer, db.ForeignKey("cases.id"), nullable=False, index=True)
+
+    title = db.Column(db.String(150), nullable=False)
+    description = db.Column(db.Text, nullable=False)
+    severity = db.Column(db.String(20), nullable=False, default="Medium")
+    status = db.Column(db.String(20), nullable=False, default=FINDING_OPEN, index=True)
+
+    created_by_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    created_at = db.Column(db.DateTime, nullable=False, default=utcnow)
+
+    # Set once the supervisor responds / investigates.
+    response_text = db.Column(db.Text, nullable=True)
+    responded_by_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=True)
+    responded_at = db.Column(db.DateTime, nullable=True)
+
+    # Set once the auditor reviews the response (closing it, or sending it back).
+    review_notes = db.Column(db.Text, nullable=True)
+    reviewed_by_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=True)
+    closed_at = db.Column(db.DateTime, nullable=True)
+
+    case = db.relationship("Case", back_populates="findings")
+    created_by = db.relationship("User", foreign_keys=[created_by_id])
+    responded_by = db.relationship("User", foreign_keys=[responded_by_id])
+    reviewed_by = db.relationship("User", foreign_keys=[reviewed_by_id])
+
+    @property
+    def is_open(self):
+        return self.status == FINDING_OPEN
+
+    @property
+    def is_responded(self):
+        return self.status == "RESPONDED"
+
+    @property
+    def is_closed(self):
+        return self.status == "CLOSED"
+
+    def __repr__(self):
+        return f"<AuditFinding {self.reference} ({self.status})>"
+
+
+# =============================================================================
+# SYSTEM SETTING  (key/value overrides set by the System Administrator)
+# =============================================================================
+class SystemSetting(db.Model):
+    __tablename__ = "system_settings"
+
+    key = db.Column(db.String(60), primary_key=True)
+    value = db.Column(db.String(255), nullable=False)
+    updated_at = db.Column(db.DateTime, nullable=False, default=utcnow, onupdate=utcnow)
+    updated_by_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=True)
+
+    updated_by = db.relationship("User")
+
+
+# =============================================================================
+# REFERENCE DATA  (incident types, non-registration reasons, ... )
+# =============================================================================
+class ReferenceData(db.Model):
+    __tablename__ = "reference_data"
+    __table_args__ = (
+        db.UniqueConstraint("category", "label", name="uq_reference_data_category_label"),
+    )
+
+    id = db.Column(db.Integer, primary_key=True)
+    category = db.Column(db.String(40), nullable=False, index=True)
+    code = db.Column(db.String(20), nullable=True)   # only used by coded lists (e.g. NR01)
+    label = db.Column(db.String(150), nullable=False)
+    is_active = db.Column(db.Boolean, nullable=False, default=True)
+    sort_order = db.Column(db.Integer, nullable=False, default=0)
+    created_at = db.Column(db.DateTime, nullable=False, default=utcnow)
+    created_by_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=True)
+
+    created_by = db.relationship("User")
+
+    def __repr__(self):
+        return f"<ReferenceData {self.category}:{self.label}>"
 
 
 # =============================================================================
@@ -325,3 +439,4 @@ IMMUTABILITY_TRIGGERS = [
     """CREATE TRIGGER IF NOT EXISTS non_registrations_no_delete BEFORE DELETE ON non_registrations
        BEGIN SELECT RAISE(ABORT, 'non_registrations is immutable: deletes are not allowed'); END;""",
 ]
+
