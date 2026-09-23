@@ -34,6 +34,9 @@
   <a class="stat" href="{{ url_for('supervisor_refusals') }}">
     <span class="stat-number">{{ stats.refusals }}</span><span class="stat-label">Non-registrations</span>
   </a>
+  <a class="stat stat-attention" href="{{ url_for('supervisor_findings', status='OPEN') }}">
+    <span class="stat-number">{{ stats.findings_pending }}</span><span class="stat-label">Findings awaiting response</span>
+  </a>
 </section>
 
 <div class="two-col">
