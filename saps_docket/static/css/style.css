@@ -1,4 +1,4 @@
-/* style.css - MODULE A: professional police/public-service look, used on every page.
+* style.css - MODULE A: professional police/public-service look, used on every page.
    Palette: dark navy, charcoal, white, muted grey, subtle gold accent. */
 
 :root {
@@ -79,6 +79,8 @@ a:hover { color: var(--gold-dark); }
 .btn-block { width: 100%; }
 .btn-sidebar { width: 100%; background: transparent; color: var(--grey-300); border-color: var(--navy-600); }
 .btn-sidebar:hover { background: var(--navy-700); color: var(--white); }
+.btn-danger { background: var(--white); color: var(--red); border-color: var(--red); }
+.btn-danger:hover { background: var(--red-bg); }
 .button-row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin: 1em 0; }
 
 /* ---------------- Public layout ---------------- */
@@ -138,6 +140,8 @@ a:hover { color: var(--gold-dark); }
 
 /* ---------------- Forms (shared) ---------------- */
 .form { display: flex; flex-direction: column; gap: 16px; max-width: 640px; }
+.form-inline { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 14px; margin-bottom: 20px; }
+.form-inline .field { flex: 1 1 220px; }
 .form-wide { max-width: 780px; }
 .field { display: flex; flex-direction: column; gap: 6px; }
 .field-checkbox { flex-direction: row; align-items: center; gap: 8px; }
@@ -227,6 +231,13 @@ textarea { resize: vertical; min-height: 90px; }
 .badge-closed { background: var(--green-bg); color: var(--green); }
 .badge-escalated { background: var(--red-bg); color: var(--red); }
 .badge-count { background: var(--navy-800); color: var(--white); border-radius: 6px; padding: 3px 10px; }
+.badge-responded { background: var(--amber-bg); color: var(--amber); }
+.badge-critical, .badge-high { background: var(--red-bg); color: var(--red); }
+.badge-medium { background: var(--amber-bg); color: var(--amber); }
+.badge-low { background: var(--blue-bg); color: var(--blue); }
+.badge-disabled { background: var(--grey-100); color: var(--grey-500); }
+.badge-active { background: var(--green-bg); color: var(--green); }
+.badge-admin { background: var(--navy-800); color: var(--white); }
 
 /* ---------------- Tables / lists ---------------- */
 .table-wrap { overflow-x: auto; }
