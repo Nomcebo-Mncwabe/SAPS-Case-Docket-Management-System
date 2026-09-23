@@ -11,6 +11,7 @@ so the system can be demonstrated immediately.
     Officer     username: officer3      password: password123
     Supervisor  username: supervisor1   password: password123
     Auditor     username: auditor1      password: password123
+    Admin       username: admin1        password: password123
 
 The demo cases use example.com e-mail addresses. To test the OTP with a REAL
 inbox, register a new case yourself using your own e-mail address.
@@ -19,6 +20,7 @@ inbox, register a new case yourself using your own e-mail address.
 from datetime import timedelta
 
 from config import (
+    ROLE_ADMIN,
     ROLE_AUDITOR,
     ROLE_OFFICER,
     ROLE_SUPERVISOR,
@@ -27,7 +29,12 @@ from config import (
     STATUS_UNDER_INVESTIGATION,
 )
 from models import AuditLog, Case, CaseActivity, NonRegistration, User, db, utcnow
-from services import build_non_registration_reference, build_reference, run_standstill_check
+from services import (
+    build_non_registration_reference,
+    build_reference,
+    run_standstill_check,
+    seed_reference_data,
+)
 
 DEMO_PASSWORD = "password123"
 
@@ -43,6 +50,7 @@ def seed_users():
         ("Lerato Naidoo", "officer3", "officer3@example.com", ROLE_OFFICER),
         ("Captain Pieter Venter", "supervisor1", "supervisor1@example.com", ROLE_SUPERVISOR),
         ("Nomvula Dube", "auditor1", "auditor1@example.com", ROLE_AUDITOR),
+        ("Zanele Khoza", "admin1", "admin1@example.com", ROLE_ADMIN),
     ]
     for full_name, username, email, role in people:
         user = User(full_name=full_name, username=username, email=email, role=role, is_active=True)
@@ -213,3 +221,5 @@ def seed_demo_cases():
 def seed_database():
     seed_users()
     seed_demo_cases()
+    seed_reference_data()
+
