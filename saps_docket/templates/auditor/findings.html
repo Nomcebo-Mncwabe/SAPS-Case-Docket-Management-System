@@ -1,0 +1,61 @@
+{# auditor/findings.html - MODULE A: Auditor's own audit findings (AUDITOR -> SUPERVISOR -> AUDITOR) #}
+{% extends "base.html" %}
+{% from "_macros.html" import finding_status_badge, severity_badge, pagination %}
+{% set layout = 'app' %}
+{% set active = 'findings' %}
+{% block title %}Audit findings{% endblock %}
+{% block page_title %}Audit findings{% endblock %}
+
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>Audit findings</h1>
+    <p class="muted">{{ open_count }} awaiting a supervisor response &middot; {{ responded_count }} awaiting your review.</p>
+  </div>
+</div>
+
+<nav class="tabs" aria-label="Finding status">
+  <a href="{{ url_for('auditor_findings') }}" {% if status == '' %}class="active" aria-current="page"{% endif %}>All</a>
+  <a href="{{ url_for('auditor_findings', status='OPEN') }}" {% if status == 'OPEN' %}class="active" aria-current="page"{% endif %}>Awaiting supervisor</a>
+  <a href="{{ url_for('auditor_findings', status='RESPONDED') }}" {% if status == 'RESPONDED' %}class="active" aria-current="page"{% endif %}>Awaiting your review</a>
+  <a href="{{ url_for('auditor_findings', status='CLOSED') }}" {% if status == 'CLOSED' %}class="active" aria-current="page"{% endif %}>Closed</a>
+</nav>
+
+<section class="panel panel-flush">
+  {% if pager.items %}
+  <div class="table-wrap">
+    <table class="table">
+      <thead>
+        <tr>
+          <th scope="col">Reference</th>
+          <th scope="col">Case</th>
+          <th scope="col">Title</th>
+          <th scope="col">Severity</th>
+          <th scope="col">Status</th>
+          <th scope="col">Raised</th>
+          <th scope="col"><span class="visually-hidden">Actions</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for f in pager.items %}
+        <tr>
+          <td class="nowrap">{{ f.reference }}</td>
+          <td class="nowrap"><a class="ref" href="{{ url_for('auditor_case_detail', case_id=f.case.id) }}">{{ f.case.case_reference }}</a></td>
+          <td class="wrap-text">{{ f.title }}</td>
+          <td>{{ severity_badge(f.severity) }}</td>
+          <td>{{ finding_status_badge(f.status) }}</td>
+          <td class="nowrap">{{ f.created_at|dt }}</td>
+          <td class="nowrap"><a class="btn btn-small btn-primary" href="{{ url_for('auditor_finding_detail', finding_id=f.id) }}">
+            {{ 'Review' if f.status == 'RESPONDED' else 'View' }}
+          </a></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+    <p class="empty">No audit findings found for this filter.</p>
+  {% endif %}
+</section>
+{{ pagination(pager, 'auditor_findings', {'status': status} if status else {}) }}
+{% endblock %}
