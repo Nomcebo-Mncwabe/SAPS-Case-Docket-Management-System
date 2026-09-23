@@ -57,13 +57,21 @@
         <a href="{{ url_for('supervisor_dashboard') }}" {% if active == 'dashboard' %}class="active" aria-current="page"{% endif %}>Dashboard</a>
         <a href="{{ url_for('supervisor_cases') }}" {% if active == 'cases' %}class="active" aria-current="page"{% endif %}>All Cases</a>
         <a href="{{ url_for('supervisor_escalations') }}" {% if active == 'escalations' %}class="active" aria-current="page"{% endif %}>Escalations</a>
+        <a href="{{ url_for('supervisor_findings') }}" {% if active == 'findings' %}class="active" aria-current="page"{% endif %}>Audit Findings</a>
         <a href="{{ url_for('supervisor_audit') }}" {% if active == 'audit' %}class="active" aria-current="page"{% endif %}>Audit Trail</a>
         <a href="{{ url_for('supervisor_refusals') }}" {% if active == 'refusals' %}class="active" aria-current="page"{% endif %}>Non-Registrations</a>
-      {% else %}
+      {% elif current_user.is_auditor %}
         <a href="{{ url_for('auditor_dashboard') }}" {% if active == 'dashboard' %}class="active" aria-current="page"{% endif %}>Dashboard</a>
         <a href="{{ url_for('auditor_cases') }}" {% if active == 'cases' %}class="active" aria-current="page"{% endif %}>All Cases</a>
+        <a href="{{ url_for('auditor_findings') }}" {% if active == 'findings' %}class="active" aria-current="page"{% endif %}>Audit Findings</a>
         <a href="{{ url_for('auditor_audit') }}" {% if active == 'audit' %}class="active" aria-current="page"{% endif %}>Audit Trail</a>
         <a href="{{ url_for('auditor_refusals') }}" {% if active == 'refusals' %}class="active" aria-current="page"{% endif %}>Non-Registrations</a>
+      {% else %}
+        <a href="{{ url_for('admin_dashboard') }}" {% if active == 'dashboard' %}class="active" aria-current="page"{% endif %}>Dashboard</a>
+        <a href="{{ url_for('admin_users') }}" {% if active == 'users' %}class="active" aria-current="page"{% endif %}>Users</a>
+        <a href="{{ url_for('admin_configuration') }}" {% if active == 'configuration' %}class="active" aria-current="page"{% endif %}>System Configuration</a>
+        <a href="{{ url_for('admin_reference_data') }}" {% if active == 'reference' %}class="active" aria-current="page"{% endif %}>Reference Data</a>
+        <a href="{{ url_for('admin_maintenance') }}" {% if active == 'maintenance' %}class="active" aria-current="page"{% endif %}>System Maintenance</a>
       {% endif %}
     </nav>
 
@@ -135,3 +143,4 @@
 <script src="{{ url_for('static', filename='js/main.js') }}"></script>
 </body>
 </html>
+
