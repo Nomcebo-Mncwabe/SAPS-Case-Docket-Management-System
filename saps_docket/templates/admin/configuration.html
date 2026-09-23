@@ -1,0 +1,38 @@
+{# admin/configuration.html - MODULE A: System Administrator - system configuration #}
+{% extends "base.html" %}
+{% from "_macros.html" import csrf %}
+{% set layout = 'app' %}
+{% set active = 'configuration' %}
+{% block title %}System configuration{% endblock %}
+{% block page_title %}System configuration{% endblock %}
+
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>System configuration</h1>
+    <p class="muted">Changes here apply immediately, station-wide, and are written to the audit trail.</p>
+  </div>
+</div>
+
+<section class="panel panel-flush" style="padding: 22px;">
+  <form method="post" action="{{ url_for('admin_configuration') }}" class="form form-wide" novalidate>
+    {{ csrf() }}
+
+    {% for key, meta in settings.items() %}
+    <div class="field {{ 'field-checkbox' if meta.type == 'bool' else '' }}">
+      {% if meta.type == 'bool' %}
+        <label><input type="checkbox" name="{{ key }}" {% if values[key] %}checked{% endif %}> {{ meta.label }}</label>
+      {% else %}
+        <label for="{{ key }}">{{ meta.label }}</label>
+        <input type="number" id="{{ key }}" name="{{ key }}" min="{{ meta.min }}" max="{{ meta.max }}" value="{{ values[key] }}" required>
+      {% endif %}
+      <p class="hint">{{ meta.help }}{% if meta.type != 'bool' %} (allowed range: {{ meta.min }}&ndash;{{ meta.max }}){% endif %}</p>
+    </div>
+    {% endfor %}
+
+    <div class="button-row">
+      <button type="submit" class="btn btn-gold btn-large">Save configuration</button>
+    </div>
+  </form>
+</section>
+{% endblock %}
