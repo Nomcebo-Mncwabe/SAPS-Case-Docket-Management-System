@@ -31,9 +31,11 @@ saps_docket/
 │   └── citizen/     (portal, verify_otp, status)
 │
 └── static/
-    ├── css/style.css
+    ├── css/style.css  (SAPS Navy & Gold theme)
     ├── js/main.js
-    └── images/        (empty — add your own station/crest image here if you want one)
+    └── img/
+        ├── saps_logo.svg (Official SAPS emblem)
+        └── saps_hero.jpg (Patrol vehicle hero banner)
 ```
 
 ## 2. Database relationships (plain English)
