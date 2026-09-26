@@ -5,11 +5,14 @@
 {% block public_wrap_class %}narrow{% endblock %}
 
 {% block public_content %}
-<div class="auth-panel">
-  <h1>Track your case</h1>
+<div class="auth-panel auth-panel-saps">
+  <div class="auth-header-crest">
+    <img src="{{ url_for('static', filename='img/saps_logo.svg') }}" alt="SAPS Emblem" width="68" height="68">
+  </div>
+  <h1>Track Your Case</h1>
   <p class="muted">
-    Enter the case reference that was e-mailed to you when your report was registered.
-    We will send a one-time PIN (OTP) to the e-mail address stored on that case.
+    Enter the unique case reference issued to you by the Community Service Centre.
+    A secure one-time PIN (OTP) will be dispatched to the verified e-mail on file.
   </p>
 
   {% if verified %}

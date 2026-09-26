@@ -3045,4 +3045,6 @@ def check_standstill_command():
 init_database()  # runs whenever the app starts, so no manual database step is needed
 
 if __name__ == "__main__":
-    app.run(debug=app.config["DEBUG_MODE"], host="127.0.0.1", port=5000)
+    import os
+    port = int(os.environ.get("PORT", 5050))
+    app.run(debug=app.config["DEBUG_MODE"], host="127.0.0.1", port=port)

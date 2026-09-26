@@ -5,23 +5,47 @@
 {% block title %}Home{% endblock %}
 
 {% block public_hero %}
-<section class="hero">
+<section class="hero hero-saps">
+  <div class="hero-overlay"></div>
   <div class="hero-inner">
     <div class="hero-copy">
-      <h1>Every reported crime leaves a record.</h1>
-      <p class="hero-lead">Improving accountability, transparency and traceability in case docket registration.</p>
+      <div class="saps-gov-tag">
+        <img src="{{ url_for('static', filename='img/saps_logo.svg') }}" alt="SAPS Crest" class="saps-mini-crest" width="28" height="28">
+        <span>SOUTH AFRICAN POLICE SERVICE &bull; REPUBLIC OF SOUTH AFRICA</span>
+      </div>
+      <h1>Every reported crime leaves an indelible record.</h1>
+      <p class="hero-lead">Strengthening accountability, community trust, and digital docket traceability across CSCs.</p>
       <p class="hero-text">
-        The Case Docket Management System helps a Community Service Centre officer register a digital docket,
-        issue a unique case reference, and keep a permanent trail of who did what, and when. Supervisors can
-        see when a case has gone quiet, and citizens can check progress with their case reference and an e-mailed one-time PIN.
+        The SAPS Case Docket Management System empowers Community Service Centre (CSC) officers to register digital dockets,
+        generate immutable case reference IDs, and enforce a tamper-proof audit trail. Supervisors monitor case progress and standstill escalations in real-time, while citizens verify and track investigations via secure cryptographic OTP.
       </p>
       <div class="hero-actions">
-        <a class="btn btn-gold btn-large" href="{{ url_for('login') }}">Officer and supervisor login</a>
-        <a class="btn btn-outline-light btn-large" href="{{ url_for('citizen_portal') }}">Track a case</a>
+        <a class="btn btn-gold btn-large" href="{{ url_for('login') }}">Officer &amp; Supervisor Portal</a>
+        <a class="btn btn-outline-light btn-large" href="{{ url_for('citizen_portal') }}">Citizen Case Tracker</a>
       </div>
-
     </div>
-
+    
+    <div class="hero-badge-card">
+      <div class="saps-emblem-showcase">
+        <img src="{{ url_for('static', filename='img/saps_logo.svg') }}" alt="South African Police Service Emblem" class="saps-hero-emblem" width="120" height="120">
+        <h3>SOUTH AFRICAN POLICE SERVICE</h3>
+        <p class="saps-motto">SERVE &amp; PROTECT &bull; DIEN EN BESKERM</p>
+      </div>
+      <div class="saps-quick-stats">
+        <div class="stat-item">
+          <span class="stat-number">100%</span>
+          <span class="stat-desc">Digital Audit Logging</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-number">24/7</span>
+          <span class="stat-desc">Citizen OTP Tracking</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-number">SAPS</span>
+          <span class="stat-desc">Official CSC Workflow</span>
+        </div>
+      </div>
+    </div>
   </div>
 </section>
 {% endblock %}
@@ -29,5 +53,28 @@
 {% block public_wrap_class %}wide{% endblock %}
 
 {% block public_content %}
-
+<section class="section">
+  <div class="feature-list">
+    <div class="feature">
+      <div class="feature-icon saps-icon">&bull; 01 &bull;</div>
+      <h3>Community Service Centre Registration</h3>
+      <p class="muted">Accurately record victim, complainant, and suspect details at the desk. Issue immediate verifiable case reference IDs.</p>
+    </div>
+    <div class="feature">
+      <div class="feature-icon saps-icon">&bull; 02 &bull;</div>
+      <h3>Chain-of-Custody &amp; Detective Workflow</h3>
+      <p class="muted">Assign investigating officers, record ongoing case notes, log court outcomes, and maintain strict evidence accountability.</p>
+    </div>
+    <div class="feature">
+      <div class="feature-icon saps-icon">&bull; 03 &bull;</div>
+      <h3>Supervisory Standstill Detection</h3>
+      <p class="muted">Automated flagging for cases with no recorded updates within configurable policy windows to prevent docket tampering or neglect.</p>
+    </div>
+    <div class="feature">
+      <div class="feature-icon saps-icon">&bull; 04 &bull;</div>
+      <h3>Public Transparency &amp; Verified Tracking</h3>
+      <p class="muted">Citizens securely inspect case statuses and assigned officer ranks using dual-factor email OTP authentication without exposing sensitive dockets.</p>
+    </div>
+  </div>
+</section>
 {% endblock %}

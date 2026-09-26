@@ -2,33 +2,36 @@
    Palette: dark navy, charcoal, white, muted grey, subtle gold accent. */
 
 :root {
-  --navy-950: #0a1220;
-  --navy-900: #0e1a2e;
-  --navy-800: #142338;
-  --navy-700: #1c3050;
-  --navy-600: #274468;
-  --charcoal: #2b2f36;
-  --grey-700: #4b5563;
-  --grey-500: #6b7280;
-  --grey-300: #d1d5db;
-  --grey-100: #f1f3f6;
+  --navy-950: #040d1a; /* Official deep SAPS Night Navy */
+  --navy-900: #08172e; /* SAPS Patrol Navy */
+  --navy-800: #0c2344; /* SAPS Uniform Navy */
+  --navy-700: #13335e; /* SAPS Accent Blue */
+  --navy-600: #1b447a;
+  --charcoal: #1e242d;
+  --grey-700: #374151;
+  --grey-500: #64748b;
+  --grey-300: #cbd5e1;
+  --grey-100: #f1f5f9;
   --white: #ffffff;
-  --gold: #c9a64a;
-  --gold-dark: #a3822f;
-  --green: #1e7a4a;
-  --green-bg: #e6f3ec;
-  --amber: #9a6b00;
-  --amber-bg: #fbeecb;
-  --red: #a3261f;
-  --red-bg: #fbe8e6;
-  --blue: #1e4e8c;
-  --blue-bg: #e7eef8;
+  --gold: #d4af37;      /* Official SAPS Insignia Gold */
+  --gold-light: #fef08a;
+  --gold-dark: #b8860b; /* Polished Brass / Gold */
+  --gold-bg: #fffbeb;
+  --green: #15803d;
+  --green-bg: #f0fdf4;
+  --amber: #b45309;
+  --amber-bg: #fffbeb;
+  --red: #b91c1c;
+  --red-bg: #fef2f2;
+  --blue: #0284c7;
+  --blue-bg: #f0f9ff;
 
   --radius: 8px;
-  --shadow-sm: 0 1px 2px rgba(10, 18, 32, 0.08);
-  --shadow-md: 0 4px 14px rgba(10, 18, 32, 0.12);
-  --font-body: "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  --font-heading: Georgia, "Times New Roman", serif;
+  --shadow-sm: 0 1px 3px rgba(4, 13, 26, 0.08);
+  --shadow-md: 0 4px 16px rgba(4, 13, 26, 0.14);
+  --shadow-lg: 0 10px 30px rgba(4, 13, 26, 0.22);
+  --font-body: "Segoe UI", system-ui, -apple-system, Roboto, Helvetica, Arial, sans-serif;
+  --font-heading: "Segoe UI", -apple-system, Roboto, Helvetica, Arial, sans-serif;
 }
 
 * { box-sizing: border-box; }
@@ -103,32 +106,150 @@ a:hover { color: var(--gold-dark); }
 .footer-small { font-size: 0.8rem; color: var(--grey-500); margin: 0; }
 
 /* ---------------- Hero ---------------- */
-.hero { background: linear-gradient(160deg, var(--navy-950), var(--navy-800)); color: var(--white); }
-.hero-inner { max-width: 1100px; margin: 0 auto; padding: 56px 24px; display: grid; grid-template-columns: 1.3fr 1fr; gap: 40px; align-items: center; }
-.hero-copy h1 { color: var(--white); font-size: 2.3rem; margin-bottom: 0.4em; }
-.hero-lead { font-size: 1.15rem; color: var(--gold); font-weight: 600; }
-.hero-text { color: var(--grey-300); max-width: 46ch; }
-.hero-actions { display: flex; gap: 12px; flex-wrap: wrap; margin: 22px 0 10px; }
-.hero-note { font-size: 0.82rem; color: var(--grey-500); }
-.ledger-card { background: var(--navy-900); border: 1px solid var(--navy-600); border-radius: var(--radius); padding: 20px; box-shadow: var(--shadow-md); }
-.ledger-card figcaption { font-size: 0.85rem; color: var(--gold); font-weight: 600; margin-bottom: 12px; }
-.ledger { display: grid; gap: 10px; margin: 0; }
-.ledger > div { display: flex; justify-content: space-between; border-bottom: 1px dashed var(--navy-600); padding-bottom: 8px; gap: 12px; }
-.ledger dt { color: var(--grey-500); font-size: 0.85rem; }
-.ledger dd { margin: 0; color: var(--white); font-weight: 600; text-align: right; }
-.ledger-note { font-size: 0.75rem; color: var(--grey-500); margin: 10px 0 0; }
+.hero {
+  position: relative;
+  background: linear-gradient(135deg, var(--navy-950) 0%, var(--navy-900) 50%, var(--navy-800) 100%);
+  color: var(--white);
+  overflow: hidden;
+}
+.hero-saps {
+  background: url('../img/saps_hero.jpg') center/cover no-repeat;
+}
+.hero-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(4, 13, 26, 0.94) 0%, rgba(8, 23, 46, 0.88) 55%, rgba(12, 35, 68, 0.82) 100%);
+  backdrop-filter: blur(2px);
+}
+.hero-inner {
+  position: relative;
+  z-index: 2;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 60px 24px;
+  display: grid;
+  grid-template-columns: 1.35fr 1fr;
+  gap: 48px;
+  align-items: center;
+}
+.saps-gov-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(212, 175, 55, 0.12);
+  border: 1px solid rgba(212, 175, 55, 0.35);
+  border-radius: 999px;
+  padding: 6px 14px;
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  font-weight: 700;
+  color: var(--gold-light);
+  margin-bottom: 18px;
+}
+.saps-mini-crest {
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
+}
+.hero-copy h1 {
+  color: var(--white);
+  font-size: 2.35rem;
+  font-weight: 800;
+  margin-bottom: 0.35em;
+  letter-spacing: -0.01em;
+}
+.hero-lead {
+  font-size: 1.15rem;
+  color: var(--gold);
+  font-weight: 600;
+  margin-bottom: 0.8em;
+}
+.hero-text {
+  color: var(--grey-300);
+  max-width: 52ch;
+  line-height: 1.6;
+}
+.hero-actions { display: flex; gap: 14px; flex-wrap: wrap; margin: 26px 0 10px; }
 
-.section { margin: 44px 0; }
-.flow { display: grid; gap: 12px; padding-left: 20px; max-width: 760px; }
-.flow li { padding-left: 6px; }
-.feature-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 18px; }
-.feature { background: var(--white); border: 1px solid var(--grey-300); border-radius: var(--radius); padding: 18px; box-shadow: var(--shadow-sm); }
-.feature h3 { margin-bottom: 0.35em; }
-.notice-panel { background: var(--navy-950); color: var(--grey-300); border-radius: var(--radius); padding: 26px; }
-.notice-panel h2 { color: var(--white); }
+/* SAPS Hero Badge Card */
+.hero-badge-card {
+  background: rgba(8, 23, 46, 0.92);
+  border: 1px solid rgba(212, 175, 55, 0.4);
+  border-radius: 12px;
+  padding: 28px 24px;
+  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  text-align: center;
+}
+.saps-emblem-showcase {
+  margin-bottom: 20px;
+}
+.saps-hero-emblem {
+  filter: drop-shadow(0 4px 14px rgba(212, 175, 55, 0.35));
+  margin-bottom: 12px;
+  transition: transform 0.3s ease;
+}
+.saps-hero-emblem:hover {
+  transform: scale(1.05);
+}
+.saps-emblem-showcase h3 {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: var(--white);
+  letter-spacing: 0.05em;
+  margin: 0 0 4px;
+}
+.saps-motto {
+  font-size: 0.76rem;
+  color: var(--gold);
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  margin: 0;
+}
+.saps-quick-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  padding-top: 16px;
+}
+.stat-item {
+  display: flex;
+  flex-direction: column;
+}
+.stat-item .stat-number {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: var(--gold-light);
+}
+.stat-item .stat-desc {
+  font-size: 0.7rem;
+  color: var(--grey-300);
+  line-height: 1.2;
+  margin-top: 2px;
+}
+
+.saps-icon {
+  color: var(--gold-dark);
+  font-weight: 700;
+  font-size: 0.8rem;
+  letter-spacing: 0.05em;
+  margin-bottom: 6px;
+}
 
 /* ---------------- Auth / forms panels (public) ---------------- */
 .auth-panel { background: var(--white); border: 1px solid var(--grey-300); border-radius: var(--radius); padding: 30px; box-shadow: var(--shadow-sm); }
+.auth-panel-saps {
+  border-top: 4px solid var(--gold);
+  box-shadow: 0 10px 30px rgba(4, 13, 26, 0.12);
+}
+.auth-header-crest {
+  text-align: center;
+  margin-bottom: 18px;
+}
+.auth-header-crest img {
+  filter: drop-shadow(0 3px 8px rgba(0,0,0,0.18));
+}
+.brand-logo {
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+}
 .auth-alt { margin-top: 14px; font-size: 0.9rem; }
 .demo-box { margin-top: 26px; padding-top: 18px; border-top: 1px solid var(--grey-300); }
 .demo-box h2 { font-size: 1rem; }

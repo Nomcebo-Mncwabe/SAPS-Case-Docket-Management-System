@@ -27,7 +27,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{% block title %}Case Docket Management System{% endblock %} | University prototype</title>
+  <title>{% block title %}Case Docket Management System{% endblock %} | South African Police Service</title>
+  <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='img/saps_logo.svg') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body class="{{ 'layout-app' if (layout == 'app' and current_user) else 'layout-public' }}">
@@ -37,11 +38,8 @@
 <div class="app-shell">
   <aside class="sidebar" id="sidebar" aria-label="Sidebar">
     <a class="brand" href="{{ home_url }}">
-      <svg class="brand-mark" viewBox="0 0 32 36" width="30" height="34" aria-hidden="true">
-        <path d="M16 1 3 6v10c0 9 5.6 15.6 13 19 7.4-3.4 13-10 13-19V6L16 1z" fill="none" stroke="#C9A64A" stroke-width="2"/>
-        <path d="M10 15h12M10 20h12M10 25h7" stroke="#C9A64A" stroke-width="2" stroke-linecap="round"/>
-      </svg>
-      <span class="brand-text">Case Docket<small>Management System</small></span>
+      <img class="brand-logo" src="{{ url_for('static', filename='img/saps_logo.svg') }}" alt="SAPS Emblem" width="38" height="38">
+      <span class="brand-text">SAPS Case Docket<small>Management System</small></span>
     </a>
 
     <nav class="side-nav" aria-label="Main navigation">
@@ -91,14 +89,14 @@
     <header class="topbar">
       <button type="button" class="menu-toggle" id="menu-toggle" aria-controls="sidebar" aria-expanded="false">Menu</button>
       <div class="topbar-title">{% block page_title %}{% endblock %}</div>
-      <div class="topbar-note">University-SFEN </div>
+      <div class="topbar-note" style="color: var(--gold-dark); font-weight: 600;">SAPS Internal Portal</div>
     </header>
     <main class="content" id="main-content">
       {{ flash_block() }}
       {% block content %}{% endblock %}
     </main>
     <footer class="app-footer">
-      Case Docket Management System 
+      South African Police Service &bull; Case Docket Management System &bull; Official Use Only
     </footer>
   </div>
 </div>
@@ -107,11 +105,8 @@
 <header class="public-header">
   <div class="public-header-inner">
     <a class="brand" href="{{ url_for('index') }}">
-      <svg class="brand-mark" viewBox="0 0 32 36" width="30" height="34" aria-hidden="true">
-        <path d="M16 1 3 6v10c0 9 5.6 15.6 13 19 7.4-3.4 13-10 13-19V6L16 1z" fill="none" stroke="#C9A64A" stroke-width="2"/>
-        <path d="M10 15h12M10 20h12M10 25h7" stroke="#C9A64A" stroke-width="2" stroke-linecap="round"/>
-      </svg>
-      <span class="brand-text">Case Docket<small>Management System</small></span>
+      <img class="brand-logo" src="{{ url_for('static', filename='img/saps_logo.svg') }}" alt="SAPS Emblem" width="40" height="40">
+      <span class="brand-text">SAPS Case Docket<small>Management System</small></span>
     </a>
     <nav class="public-nav" aria-label="Main navigation">
       <a href="{{ url_for('index') }}" {% if active == 'home' %}class="active" aria-current="page"{% endif %}>Home</a>
@@ -135,7 +130,14 @@
 
 <footer class="public-footer">
   <div class="public-footer-inner">
-    <p><strong>Case Docket Management System</strong></p>
+    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
+      <img src="{{ url_for('static', filename='img/saps_logo.svg') }}" alt="SAPS Crest" width="34" height="34">
+      <div>
+        <p style="margin: 0; font-weight: 700; color: var(--white); font-size: 0.95rem;">South African Police Service &bull; Republic of South Africa</p>
+        <p style="margin: 0; font-size: 0.76rem; color: var(--gold);">Case Docket Management System &bull; National Community Service Centre Network</p>
+      </div>
+    </div>
+    <p class="footer-small">Emergency: 10111 &bull; Crime Stop: 08600 10111 &bull; University Research &amp; Prototype Project</p>
   </div>
 </footer>
 {% endif %}

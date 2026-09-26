@@ -4,9 +4,12 @@
 {% block public_wrap_class %}narrow{% endblock %}
 
 {% block public_content %}
-<div class="auth-panel">
-  <h1>Officer and supervisor login</h1>
-  <p class="muted">Sign in with the account issued to you. Every login is recorded in the audit trail.</p>
+<div class="auth-panel auth-panel-saps">
+  <div class="auth-header-crest">
+    <img src="{{ url_for('static', filename='img/saps_logo.svg') }}" alt="SAPS Emblem" width="68" height="68">
+  </div>
+  <h1>Officer &amp; Supervisor Login</h1>
+  <p class="muted">Sign in with your authorized SAPS credentials. Every authentication event is committed to the immutable audit ledger.</p>
 
   <form method="post" action="{{ url_for('login', next=request.args.get('next')) }}" class="form" novalidate>
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
