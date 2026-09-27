@@ -1,0 +1,20 @@
+{# error.html - MODULE A: one friendly page for 400 / 403 / 404 / 405 / 500 #}
+{% extends "base.html" %}
+{% block title %}{{ title }}{% endblock %}
+{% block public_wrap_class %}narrow{% endblock %}
+
+{% block public_content %}
+<div class="error-panel">
+  <p class="error-code">Error {{ code }}</p>
+  <h1>{{ title }}</h1>
+  <p>{{ message }}</p>
+  <div class="button-row">
+    {% if current_user %}
+      <a class="btn btn-primary" href="{{ home_url }}">Back to my dashboard</a>
+    {% else %}
+      <a class="btn btn-primary" href="{{ url_for('index') }}">Go to the home page</a>
+      <a class="btn btn-ghost" href="{{ url_for('login') }}">Log in</a>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

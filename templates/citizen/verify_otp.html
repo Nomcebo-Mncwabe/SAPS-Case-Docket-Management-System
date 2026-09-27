@@ -1,0 +1,37 @@
+{# citizen/verify_otp.html - MODULE A: citizen tracking portal, step 2 (enter the e-mailed OTP) #}
+{% extends "base.html" %}
+{% set active = 'citizen' %}
+{% block title %}Enter your OTP{% endblock %}
+{% block public_wrap_class %}narrow{% endblock %}
+
+{% block public_content %}
+<div class="auth-panel">
+  <h1>Enter your one-time PIN</h1>
+  <p class="muted">
+    If <strong class="ref">{{ reference }}</strong> is a valid case reference, we have e-mailed a 6-digit OTP to the address
+    registered on that case. It expires in {{ config['OTP_EXPIRY_MINUTES'] }} minutes and can only be used once.
+  </p>
+
+  <form method="post" action="{{ url_for('citizen_verify_otp') }}" class="form" novalidate>
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="field">
+      <label for="otp">6-digit OTP</label>
+      <input type="text" id="otp" name="otp" class="otp-input" inputmode="numeric" pattern="[0-9]{6}"
+             maxlength="6" autocomplete="one-time-code" placeholder="000000" required autofocus>
+      <p class="hint">You have {{ config['OTP_MAX_ATTEMPTS'] }} attempts for each OTP.</p>
+    </div>
+    <button type="submit" class="btn btn-primary btn-block">Verify and view my case</button>
+  </form>
+
+  <div class="resend">
+    <p class="muted">Did not get the e-mail? Check your spam folder and make sure the reference is correct.
+       A new OTP can be requested every {{ config['OTP_RESEND_COOLDOWN_SECONDS'] }} seconds.</p>
+    <form method="post" action="{{ url_for('citizen_request_otp') }}" class="inline-form">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="hidden" name="case_reference" value="{{ reference }}">
+      <button type="submit" class="btn btn-ghost">Send a new OTP</button>
+      <a class="btn btn-link" href="{{ url_for('citizen_logout') }}">Use a different case reference</a>
+    </form>
+  </div>
+</div>
+{% endblock %}

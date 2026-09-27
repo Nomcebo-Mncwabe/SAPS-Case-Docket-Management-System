@@ -1,0 +1,54 @@
+{# admin/maintenance.html - MODULE A: System Administrator - system maintenance #}
+{% extends "base.html" %}
+{% from "_macros.html" import csrf %}
+{% set layout = 'app' %}
+{% set active = 'maintenance' %}
+{% block title %}System maintenance{% endblock %}
+{% block page_title %}System maintenance{% endblock %}
+
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>System maintenance</h1>
+    <p class="muted">Database statistics and housekeeping tasks.</p>
+  </div>
+</div>
+
+<section class="stat-grid" aria-label="Database record counts">
+  <div class="stat"><span class="stat-number">{{ stats.users }}</span><span class="stat-label">Users</span></div>
+  <div class="stat"><span class="stat-number">{{ stats.cases }}</span><span class="stat-label">Cases</span></div>
+  <div class="stat"><span class="stat-number">{{ stats.activities }}</span><span class="stat-label">Case activities</span></div>
+  <div class="stat"><span class="stat-number">{{ stats.escalations }}</span><span class="stat-label">Escalations</span></div>
+  <div class="stat"><span class="stat-number">{{ stats.non_registrations }}</span><span class="stat-label">Non-registrations</span></div>
+  <div class="stat"><span class="stat-number">{{ stats.findings }}</span><span class="stat-label">Audit findings</span></div>
+  <div class="stat"><span class="stat-number">{{ stats.audit_logs }}</span><span class="stat-label">Audit trail entries</span></div>
+  <div class="stat"><span class="stat-number">{{ stats.active_lockouts }}</span><span class="stat-label">Tracked login identifiers</span></div>
+</section>
+
+<div class="two-col">
+  <section class="panel" aria-labelledby="standstill-heading">
+    <h2 id="standstill-heading">Standstill / escalation check</h2>
+    <p class="muted small">Normally runs automatically whenever a supervisor opens their dashboard. Use this to run it immediately (e.g. after changing the standstill threshold in System Configuration, currently {{ standstill_days }} day(s)).</p>
+    <form method="post" action="{{ url_for('admin_run_standstill') }}">
+      {{ csrf() }}
+      <button type="submit" class="btn btn-primary">Run standstill check now</button>
+    </form>
+  </section>
+
+  <section class="panel" aria-labelledby="lockouts-heading">
+    <h2 id="lockouts-heading">Login lockouts</h2>
+    <p class="muted small">Clears every tracked failed-login counter, immediately un-blocking any account currently locked out after too many wrong passwords.</p>
+    <form method="post" action="{{ url_for('admin_clear_lockouts') }}"
+          onsubmit="return confirm('Clear all tracked login-lockout records?');">
+      {{ csrf() }}
+      <button type="submit" class="btn btn-ghost">Clear login lockouts</button>
+    </form>
+  </section>
+</div>
+
+<section class="panel" aria-labelledby="export-heading">
+  <h2 id="export-heading">Full audit trail export</h2>
+  <p class="muted small">Download every audit-trail entry in the system as a CSV file, for backup or offline analysis.</p>
+  <a class="btn btn-ghost" href="{{ url_for('admin_export_audit') }}">Export full audit trail (CSV)</a>
+</section>
+{% endblock %}

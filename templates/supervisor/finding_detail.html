@@ -1,0 +1,80 @@
+{# supervisor/finding_detail.html - MODULE A: Supervisor responds to / investigates an audit finding #}
+{% extends "base.html" %}
+{% from "_macros.html" import status_badge, finding_status_badge, severity_badge, csrf %}
+{% set layout = 'app' %}
+{% set active = 'findings' %}
+{% block title %}{{ finding.reference }}{% endblock %}
+{% block page_title %}Finding {{ finding.reference }}{% endblock %}
+
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>{{ finding.reference }}</h1>
+    <p class="muted">
+      {{ finding_status_badge(finding.status) }} {{ severity_badge(finding.severity) }}
+      &nbsp;&middot;&nbsp; Case <a class="ref" href="{{ url_for('supervisor_case_detail', case_id=finding.case.id) }}">{{ finding.case.case_reference }}</a>
+      {{ status_badge(finding.case.status) }}
+    </p>
+  </div>
+</div>
+
+<div class="two-col two-col-wide">
+  <div>
+    <section class="panel" aria-labelledby="finding-heading">
+      <h2 id="finding-heading">{{ finding.title }}</h2>
+      <p class="wrap-text">{{ finding.description }}</p>
+      <p class="muted small">Raised by {{ finding.created_by.full_name }} (Auditor) on {{ finding.created_at|dt }}.</p>
+    </section>
+
+    {% if finding.response_text %}
+    <section class="panel" aria-labelledby="response-heading">
+      <h2 id="response-heading">Your response</h2>
+      <p class="wrap-text">{{ finding.response_text }}</p>
+      <p class="muted small">By {{ finding.responded_by.full_name }} on {{ finding.responded_at|dt }}.</p>
+    </section>
+    {% endif %}
+
+    {% if finding.review_notes %}
+    <section class="panel" aria-labelledby="review-heading">
+      <h2 id="review-heading">Auditor review notes</h2>
+      <p class="wrap-text">{{ finding.review_notes }}</p>
+      <p class="muted small">By {{ finding.reviewed_by.full_name if finding.reviewed_by else '-' }}.</p>
+      {% if finding.is_open %}
+        <p class="hint">The auditor has requested a further response - please respond again below.</p>
+      {% endif %}
+    </section>
+    {% endif %}
+  </div>
+
+  <div>
+    {% if finding.is_open %}
+    <section class="panel panel-highlight" aria-labelledby="action-heading">
+      <h2 id="action-heading">Response required</h2>
+      <form method="post" action="{{ url_for('supervisor_finding_respond', finding_id=finding.id) }}" class="form">
+        {{ csrf() }}
+        <div class="field">
+          <label for="response_text">Your response / investigation notes <span class="req" aria-hidden="true">*</span></label>
+          <textarea id="response_text" name="response_text" rows="6" maxlength="3000" required>{{ form.get('response_text', '') }}</textarea>
+          <p class="hint">Describe what you investigated and what action was taken (at least 10 characters).</p>
+        </div>
+        <div class="button-row">
+          <button type="submit" class="btn btn-primary btn-large">Submit response</button>
+        </div>
+      </form>
+    </section>
+    {% elif finding.is_responded %}
+    <section class="panel" aria-labelledby="status-heading">
+      <h2 id="status-heading">Status</h2>
+      <p>{{ finding_status_badge(finding.status) }}</p>
+      <p class="muted small">Your response has been submitted. Waiting for the auditor to review it.</p>
+    </section>
+    {% else %}
+    <section class="panel" aria-labelledby="status-heading">
+      <h2 id="status-heading">Status</h2>
+      <p>{{ finding_status_badge(finding.status) }}</p>
+      <p class="muted small">This finding has been closed by the auditor. No further action is required.</p>
+    </section>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

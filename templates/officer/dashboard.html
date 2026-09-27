@@ -1,0 +1,89 @@
+{# officer/dashboard.html - MODULE A: officer dashboard #}
+{% extends "base.html" %}
+{% from "_macros.html" import status_badge, escalated_badge %}
+{% set layout = 'app' %}
+{% set active = 'dashboard' %}
+{% block title %}Officer dashboard{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>Good day, {{ current_user.full_name }}</h1>
+    <p class="muted">Your cases, and the ones that need attention first.</p>
+  </div>
+  <div class="button-row">
+    <a class="btn btn-gold" href="{{ url_for('officer_register_case') }}">Register new case</a>
+    <a class="btn btn-primary" href="{{ url_for('officer_cases', view='all') }}">View my cases</a>
+  </div>
+</div>
+
+<section class="stat-grid" aria-label="Case summary">
+  <a class="stat" href="{{ url_for('officer_cases', view='registered') }}">
+    <span class="stat-number">{{ stats.registered }}</span>
+    <span class="stat-label">Registered by me</span>
+  </a>
+  <a class="stat" href="{{ url_for('officer_cases', view='assigned') }}">
+    <span class="stat-number">{{ stats.assigned }}</span>
+    <span class="stat-label">Assigned to me</span>
+  </a>
+  <a class="stat stat-open" href="{{ url_for('officer_cases', view='all', status='OPEN') }}">
+    <span class="stat-number">{{ stats.open }}</span>
+    <span class="stat-label">Open</span>
+  </a>
+  <a class="stat stat-investigating" href="{{ url_for('officer_cases', view='all', status='UNDER INVESTIGATION') }}">
+    <span class="stat-number">{{ stats.investigating }}</span>
+    <span class="stat-label">Under investigation</span>
+  </a>
+  <a class="stat stat-closed" href="{{ url_for('officer_cases', view='all', status='CLOSED') }}">
+    <span class="stat-number">{{ stats.closed }}</span>
+    <span class="stat-label">Closed</span>
+  </a>
+  <a class="stat stat-attention" href="{{ url_for('officer_cases', view='attention') }}">
+    <span class="stat-number">{{ stats.attention }}</span>
+    <span class="stat-label">Requiring attention</span>
+  </a>
+</section>
+
+<div class="two-col">
+  <section class="panel" aria-labelledby="attention-heading">
+    <h2 id="attention-heading">Cases requiring attention</h2>
+    <p class="muted small">A case is flagged when it has had no activity for {{ standstill_days }} day(s). Adding a progress update keeps it moving.</p>
+    {% if attention_cases %}
+    <ul class="item-list">
+      {% for case in attention_cases %}
+      <li>
+        <div>
+          <a class="ref" href="{{ url_for('officer_case_detail', case_id=case.id) }}">{{ case.case_reference }}</a>
+          {{ status_badge(case.status) }} {{ escalated_badge(case) }}
+          <div class="muted small">{{ case.incident_type }} &ndash; last activity {{ case.last_activity_at|ago }}</div>
+        </div>
+        <a class="btn btn-small btn-primary" href="{{ url_for('officer_case_update', case_id=case.id) }}">Add update</a>
+      </li>
+      {% endfor %}
+    </ul>
+    {% else %}
+      <p class="empty">Nothing needs attention. Your cases are all moving.</p>
+    {% endif %}
+  </section>
+
+  <section class="panel" aria-labelledby="recent-heading">
+    <h2 id="recent-heading">Recent activity on my cases</h2>
+    {% if recent %}
+    <ul class="item-list">
+      {% for a in recent %}
+      <li>
+        <div>
+          <strong>{{ a.activity_type }}</strong>
+          on <a class="ref" href="{{ url_for('officer_case_detail', case_id=a.case_id) }}">{{ a.case.case_reference }}</a>
+          <div class="muted small">{{ a.officer.full_name }} &ndash; {{ a.created_at|dt }}</div>
+        </div>
+      </li>
+      {% endfor %}
+    </ul>
+    {% else %}
+      <p class="empty">No activity yet. Register a case to get started.</p>
+    {% endif %}
+  </section>
+</div>
+{% endblock %}

@@ -1,0 +1,77 @@
+{# admin/users.html - MODULE A: System Administrator - manage user accounts #}
+{% extends "base.html" %}
+{% from "_macros.html" import user_status_badge, pagination %}
+{% set layout = 'app' %}
+{% set active = 'users' %}
+{% block title %}Users{% endblock %}
+{% block page_title %}Users{% endblock %}
+
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>Users</h1>
+    <p class="muted">{{ pager.total }} user(s) found.</p>
+  </div>
+  <a class="btn btn-primary" href="{{ url_for('admin_user_new') }}">Create user</a>
+</div>
+
+<form method="get" action="{{ url_for('admin_users') }}" class="filter-bar">
+  <div class="field">
+    <label for="q">Search</label>
+    <input type="search" id="q" name="q" value="{{ search }}" placeholder="Name, username or e-mail">
+  </div>
+  <div class="field">
+    <label for="role">Role</label>
+    <select id="role" name="role">
+      <option value="">All roles</option>
+      <option value="OFFICER" {% if role_filter == 'OFFICER' %}selected{% endif %}>CSC Officer</option>
+      <option value="SUPERVISOR" {% if role_filter == 'SUPERVISOR' %}selected{% endif %}>CSC Supervisor</option>
+      <option value="AUDITOR" {% if role_filter == 'AUDITOR' %}selected{% endif %}>Internal Auditor / IPID</option>
+      <option value="ADMIN" {% if role_filter == 'ADMIN' %}selected{% endif %}>System Administrator</option>
+    </select>
+  </div>
+  <div class="field">
+    <label for="status">Status</label>
+    <select id="status" name="status">
+      <option value="">All statuses</option>
+      <option value="active" {% if status_filter == 'active' %}selected{% endif %}>Active</option>
+      <option value="disabled" {% if status_filter == 'disabled' %}selected{% endif %}>Disabled</option>
+    </select>
+  </div>
+  <button type="submit" class="btn btn-primary">Apply filters</button>
+  <a class="btn btn-ghost" href="{{ url_for('admin_users') }}">Clear</a>
+</form>
+
+<section class="panel panel-flush">
+  {% if pager.items %}
+  <div class="table-wrap">
+    <table class="table">
+      <thead>
+        <tr>
+          <th scope="col">Name</th>
+          <th scope="col">Username</th>
+          <th scope="col">Role</th>
+          <th scope="col">Status</th>
+          <th scope="col"><span class="visually-hidden">Actions</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for u in pager.items %}
+        <tr>
+          <td>{{ u.full_name }}</td>
+          <td class="nowrap">{{ u.username }}</td>
+          <td class="nowrap">{{ u.role_label }}</td>
+          <td>{{ user_status_badge(u) }}</td>
+          <td class="nowrap"><a class="btn btn-small btn-primary" href="{{ url_for('admin_user_detail', user_id=u.id) }}">Manage</a></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+    <p class="empty">No users match these filters.</p>
+  {% endif %}
+</section>
+
+{{ pagination(pager, 'admin_users', filters) }}
+{% endblock %}

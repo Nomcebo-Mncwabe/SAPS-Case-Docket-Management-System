@@ -1,0 +1,64 @@
+{# citizen/status.html - MODULE A: citizen tracking portal, step 3 (the case status) #}
+{# This page only receives the "info" dictionary built in app.py: no audit log, no officer notes, no statement. #}
+{% extends "base.html" %}
+{% from "_macros.html" import status_badge %}
+{% set active = 'citizen' %}
+{% block title %}Your case status{% endblock %}
+{% block public_wrap_class %}medium{% endblock %}
+
+{% block public_content %}
+<div class="citizen-status">
+  <div class="docket-head">
+    <div>
+      <p class="docket-label">Case reference</p>
+      <h1 class="docket-ref">{{ info.reference }}</h1>
+    </div>
+    <div class="docket-status">
+      {{ status_badge(info.status) }}
+    </div>
+  </div>
+
+  <div class="status-explain">
+    {% if info.status == STATUS_OPEN %}
+      <p><strong>Your case is registered and open.</strong> It is waiting to be worked on or is being prepared for investigation.</p>
+    {% elif info.status == STATUS_UNDER_INVESTIGATION %}
+      <p><strong>Your case is under investigation.</strong> An officer is working on it. Updates are listed below.</p>
+    {% else %}
+      <p><strong>Your case is closed.</strong> If you have new information, please visit the station and quote your case reference.</p>
+    {% endif %}
+  </div>
+
+  <div class="panel">
+    <h2>Case summary</h2>
+    <dl class="kv">
+      <div><dt>Registered on</dt><dd>{{ info.registered|longdate }}</dd></div>
+      <div><dt>Last update</dt><dd>{{ info.last_update|dt }}</dd></div>
+      <div><dt>Type of incident</dt><dd>{{ info.incident_type }}</dd></div>
+      <div><dt>Date of incident</dt><dd>{{ info.incident_date|longdate }}</dd></div>
+      <div><dt>Assigned officer</dt><dd>{{ info.officer_name or 'Not yet assigned' }}</dd></div>
+      <div><dt>Latest progress</dt><dd>{{ info.current_activity or 'No progress recorded yet' }}</dd></div>
+    </dl>
+  </div>
+
+  <div class="panel">
+    <h2>Progress</h2>
+    {% if info.timeline %}
+    <ol class="timeline timeline-simple">
+      {% for item in info.timeline %}
+      <li>
+        <div class="timeline-when">{{ item.when|dt }}</div>
+        <div class="timeline-body"><div class="timeline-text">{{ item.text }}</div></div>
+      </li>
+      {% endfor %}
+    </ol>
+    {% else %}
+      <p class="empty">No progress has been recorded yet.</p>
+    {% endif %}
+  </div>
+
+  <div class="button-row">
+    <a class="btn btn-ghost" href="{{ url_for('citizen_logout') }}">Finish and leave the portal</a>
+  </div>
+  <p class="muted small">This page closes automatically {{ config['CITIZEN_SESSION_MINUTES'] }} minutes after you verified your OTP.</p>
+</div>
+{% endblock %}

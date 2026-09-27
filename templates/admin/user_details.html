@@ -1,0 +1,89 @@
+{# admin/user_detail.html - MODULE A: System Administrator - manage one user account #}
+{% extends "base.html" %}
+{% from "_macros.html" import user_status_badge, audit_table, csrf %}
+{% set layout = 'app' %}
+{% set active = 'users' %}
+{% block title %}{{ user.full_name }}{% endblock %}
+{% block page_title %}{{ user.full_name }}{% endblock %}
+
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>{{ user.full_name }}</h1>
+    <p class="muted">{{ user.username }} &middot; {{ user.email }} &middot; {{ user.role_label }} &nbsp; {{ user_status_badge(user) }}</p>
+  </div>
+</div>
+
+<div class="two-col two-col-wide">
+  <div>
+    <section class="panel" aria-labelledby="account-heading">
+      <h2 id="account-heading">Account details</h2>
+      <dl class="kv kv-grid">
+        <div><dt>Username</dt><dd>{{ user.username }}</dd></div>
+        <div><dt>E-mail</dt><dd>{{ user.email }}</dd></div>
+        <div><dt>Role</dt><dd>{{ user.role_label }}</dd></div>
+        <div><dt>Status</dt><dd>{{ user_status_badge(user) }}</dd></div>
+        <div><dt>Created</dt><dd>{{ user.created_at|dt }}</dd></div>
+        <div><dt>Last login</dt><dd>{{ user.last_login_at|dt if user.last_login_at else 'Never' }}</dd></div>
+      </dl>
+    </section>
+
+    <section class="panel" aria-labelledby="actions-heading">
+      <h2 id="actions-heading">Recent account activity</h2>
+      {{ audit_table(actions, show_case=True) }}
+    </section>
+  </div>
+
+  <div>
+    {% if user.id == current_user.id %}
+    <section class="panel panel-quiet">
+      <p class="muted small">This is your own account. You cannot disable it, change its role, or reset its password from here.</p>
+    </section>
+    {% else %}
+    <section class="panel" aria-labelledby="role-heading">
+      <h2 id="role-heading">Change role</h2>
+      <form method="post" action="{{ url_for('admin_user_role', user_id=user.id) }}" class="form">
+        {{ csrf() }}
+        <div class="field">
+          <label for="role">Role</label>
+          <select id="role" name="role">
+            {% for r in roles %}
+              <option value="{{ r }}" {% if r == user.role %}selected{% endif %}>{{ r|title }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <button type="submit" class="btn btn-primary">Update role</button>
+      </form>
+    </section>
+
+    <section class="panel" aria-labelledby="password-heading">
+      <h2 id="password-heading">Reset password</h2>
+      <p class="muted small">Generates a new random temporary password, shown once. The user should change it after logging in.</p>
+      <form method="post" action="{{ url_for('admin_user_reset_password', user_id=user.id) }}" class="form"
+            onsubmit="return confirm('Reset the password for {{ user.username }}? The current password will stop working immediately.');">
+        {{ csrf() }}
+        <button type="submit" class="btn btn-ghost">Reset password</button>
+      </form>
+    </section>
+
+    <section class="panel panel-highlight" aria-labelledby="status-heading">
+      <h2 id="status-heading">Account status</h2>
+      <p class="muted small">
+        {% if user.is_active %}
+          Disabling this account immediately prevents the user from logging in.
+        {% else %}
+          This account is disabled and cannot log in.
+        {% endif %}
+      </p>
+      <form method="post" action="{{ url_for('admin_user_toggle_active', user_id=user.id) }}" class="form"
+            {% if user.is_active %}onsubmit="return confirm('Disable the account for {{ user.username }}?');"{% endif %}>
+        {{ csrf() }}
+        <button type="submit" class="btn {{ 'btn-danger' if user.is_active else 'btn-primary' }}">
+          {{ 'Disable account' if user.is_active else 'Enable account' }}
+        </button>
+      </form>
+    </section>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

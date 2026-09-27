@@ -1,0 +1,38 @@
+{# citizen/portal.html - MODULE A: citizen tracking portal, step 1 (enter case reference) #}
+{% extends "base.html" %}
+{% set active = 'citizen' %}
+{% block title %}Track your case{% endblock %}
+{% block public_wrap_class %}narrow{% endblock %}
+
+{% block public_content %}
+<div class="auth-panel auth-panel-saps">
+  <div class="auth-header-crest">
+    <img src="{{ url_for('static', filename='img/saps_logo.svg') }}" alt="SAPS Emblem" width="68" height="68">
+  </div>
+  <h1>Track Your Case</h1>
+  <p class="muted">
+    Enter the unique case reference issued to you by the Community Service Centre.
+    A secure one-time PIN (OTP) will be dispatched to the verified e-mail on file.
+  </p>
+
+  {% if verified %}
+  <div class="notice notice-info">
+    You are already verified for a case.
+    <a href="{{ url_for('citizen_status') }}">View your case status</a>
+  </div>
+  {% endif %}
+
+  <form method="post" action="{{ url_for('citizen_request_otp') }}" class="form" novalidate>
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="field">
+      <label for="case_reference">Case reference</label>
+      <input type="text" id="case_reference" name="case_reference" placeholder="SAPS-2026-000001"
+             maxlength="20" autocomplete="off" autocapitalize="characters" required autofocus>
+
+    </div>
+    <button type="submit" class="btn btn-primary btn-block">Request OTP</button>
+  </form>
+
+
+</div>
+{% endblock %}

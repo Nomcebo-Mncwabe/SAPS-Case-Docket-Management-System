@@ -1,0 +1,86 @@
+{# auditor/finding_detail.html - MODULE A: Auditor view of one finding + review action #}
+{% extends "base.html" %}
+{% from "_macros.html" import status_badge, finding_status_badge, severity_badge, csrf %}
+{% set layout = 'app' %}
+{% set active = 'findings' %}
+{% block title %}{{ finding.reference }}{% endblock %}
+{% block page_title %}Finding {{ finding.reference }}{% endblock %}
+
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>{{ finding.reference }}</h1>
+    <p class="muted">
+      {{ finding_status_badge(finding.status) }} {{ severity_badge(finding.severity) }}
+      &nbsp;&middot;&nbsp; Case <a class="ref" href="{{ url_for('auditor_case_detail', case_id=finding.case.id) }}">{{ finding.case.case_reference }}</a>
+      {{ status_badge(finding.case.status) }}
+    </p>
+  </div>
+</div>
+
+<div class="two-col two-col-wide">
+  <div>
+    <section class="panel" aria-labelledby="finding-heading">
+      <h2 id="finding-heading">{{ finding.title }}</h2>
+      <p class="wrap-text">{{ finding.description }}</p>
+      <p class="muted small">Raised by {{ finding.created_by.full_name }} on {{ finding.created_at|dt }}.</p>
+    </section>
+
+    {% if finding.response_text %}
+    <section class="panel" aria-labelledby="response-heading">
+      <h2 id="response-heading">Supervisor response</h2>
+      <p class="wrap-text">{{ finding.response_text }}</p>
+      <p class="muted small">By {{ finding.responded_by.full_name }} on {{ finding.responded_at|dt }}.</p>
+    </section>
+    {% else %}
+    <section class="panel panel-quiet">
+      <p class="empty">No response from a supervisor yet.</p>
+    </section>
+    {% endif %}
+
+    {% if finding.review_notes %}
+    <section class="panel" aria-labelledby="review-heading">
+      <h2 id="review-heading">Auditor review notes</h2>
+      <p class="wrap-text">{{ finding.review_notes }}</p>
+      <p class="muted small">
+        By {{ finding.reviewed_by.full_name if finding.reviewed_by else '-' }}
+        {% if finding.closed_at %} &middot; closed {{ finding.closed_at|dt }}{% endif %}
+      </p>
+    </section>
+    {% endif %}
+  </div>
+
+  <div>
+    {% if finding.is_responded %}
+    <section class="panel panel-highlight" aria-labelledby="action-heading">
+      <h2 id="action-heading">Review required</h2>
+      <p class="muted small">Read the supervisor's response above, then either close this finding or send it back for a further response.</p>
+      <form method="post" action="{{ url_for('auditor_finding_review', finding_id=finding.id) }}" class="form">
+        {{ csrf() }}
+        <div class="field">
+          <label for="review_notes">Review notes <span class="req" aria-hidden="true">*</span></label>
+          <textarea id="review_notes" name="review_notes" rows="4" maxlength="2000" required></textarea>
+          <p class="hint">At least 5 characters. This is written to the permanent audit trail.</p>
+        </div>
+        <div class="button-row">
+          <button type="submit" name="decision" value="close" class="btn btn-primary">Close finding</button>
+          <button type="submit" name="decision" value="reopen" class="btn btn-ghost">Send back for further response</button>
+        </div>
+      </form>
+    </section>
+    {% elif finding.is_open %}
+    <section class="panel" aria-labelledby="status-heading">
+      <h2 id="status-heading">Status</h2>
+      <p>{{ finding_status_badge(finding.status) }}</p>
+      <p class="muted small">Waiting for a CSC Supervisor to respond / investigate.</p>
+    </section>
+    {% else %}
+    <section class="panel" aria-labelledby="status-heading">
+      <h2 id="status-heading">Status</h2>
+      <p>{{ finding_status_badge(finding.status) }}</p>
+      <p class="muted small">This finding is closed. No further action is required.</p>
+    </section>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

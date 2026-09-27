@@ -1,0 +1,64 @@
+{# supervisor/escalations.html - MODULE A: escalation queue #}
+{% extends "base.html" %}
+{% from "_macros.html" import status_badge, pagination %}
+{% set layout = 'app' %}
+{% set active = 'escalations' %}
+{% block title %}Escalations{% endblock %}
+{% block page_title %}Escalations{% endblock %}
+
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>Escalations</h1>
+    <p class="muted">Cases flagged after {{ standstill_days }} day(s) without activity. {{ pending_count }} awaiting review.</p>
+  </div>
+  <form method="post" action="{{ url_for('supervisor_escalation_scan') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <button type="submit" class="btn btn-primary">Run standstill check now</button>
+  </form>
+</div>
+
+<nav class="tabs" aria-label="Escalation status">
+  <a href="{{ url_for('supervisor_escalations', status='PENDING') }}" {% if status == 'PENDING' %}class="active" aria-current="page"{% endif %}>Pending review</a>
+  <a href="{{ url_for('supervisor_escalations', status='REVIEWED') }}" {% if status == 'REVIEWED' %}class="active" aria-current="page"{% endif %}>Reviewed</a>
+  <a href="{{ url_for('supervisor_escalations', status='ALL') }}" {% if status == 'ALL' %}class="active" aria-current="page"{% endif %}>All</a>
+</nav>
+
+<section class="panel panel-flush">
+  {% if pager.items %}
+  <div class="table-wrap">
+    <table class="table">
+      <thead>
+        <tr>
+          <th scope="col">Case</th>
+          <th scope="col">Status</th>
+          <th scope="col">Reason</th>
+          <th scope="col">Raised</th>
+          <th scope="col">Reviewed</th>
+          <th scope="col"><span class="visually-hidden">Actions</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for e in pager.items %}
+        <tr>
+          <td class="nowrap"><a class="ref" href="{{ url_for('supervisor_case_detail', case_id=e.case.id) }}">{{ e.case.case_reference }}</a></td>
+          <td>{{ status_badge(e.case.status) }}</td>
+          <td class="wrap-text">{{ e.reason }}</td>
+          <td class="nowrap">{{ e.created_at|dt }}</td>
+          <td class="nowrap">
+            {% if e.reviewed_at %}{{ e.reviewed_at|dt }}<div class="muted small">by {{ e.reviewed_by.full_name }}</div>{% else %}&ndash;{% endif %}
+          </td>
+          <td class="nowrap"><a class="btn btn-small btn-primary" href="{{ url_for('supervisor_case_detail', case_id=e.case.id) }}">
+            {{ 'Review' if e.status == 'PENDING' else 'View' }}
+          </a></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+    <p class="empty">No escalations found for this filter.</p>
+  {% endif %}
+</section>
+{{ pagination(pager, 'supervisor_escalations', filters) }}
+{% endblock %}

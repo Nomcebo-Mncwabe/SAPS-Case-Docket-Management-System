@@ -1,0 +1,32 @@
+{# officer/register_case.html - MODULE A: "Register New Case" form (steps 2-4 of the registration flow) #}
+{% extends "base.html" %}
+{% set layout = 'app' %}
+{% set active = 'register' %}
+{% block title %}Register new case{% endblock %}
+{% block page_title %}Register new case{% endblock %}
+
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>Register a new case</h1>
+    <p class="muted">Capture what the citizen reports. Fields marked * are required. You will be recorded as the registering officer.</p>
+  </div>
+</div>
+
+<form method="post" action="{{ url_for('officer_register_case') }}" class="form form-wide" novalidate data-confirm-once>
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  {% set show_statement = True %}
+  {% include "officer/_case_fields.html" %}
+
+  <div class="button-row">
+    <button type="submit" class="btn btn-gold btn-large">Register case and e-mail the reference</button>
+    <a class="btn btn-ghost btn-large" href="{{ url_for('officer_dashboard') }}">Cancel</a>
+  </div>
+</form>
+
+<aside class="panel panel-quiet">
+  <h2>Cannot register this report?</h2>
+  <p>A reported crime must never simply disappear. If you decide not to register it, record a coded reason and your justification.</p>
+  <a class="btn btn-ghost" href="{{ url_for('officer_refusal_new') }}">Record a non-registration</a>
+</aside>
+{% endblock %}

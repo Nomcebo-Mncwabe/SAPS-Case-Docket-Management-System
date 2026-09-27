@@ -1,0 +1,54 @@
+# auditor/flag_case.html - MODULE A: Auditor "Flag for Review" - raise an audit finding on a case #}
+{% extends "base.html" %}
+{% from "_macros.html" import status_badge, csrf %}
+{% set layout = 'app' %}
+{% set active = 'cases' %}
+{% block title %}Flag {{ case.case_reference }} for review{% endblock %}
+{% block page_title %}Flag case for review{% endblock %}
+
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>Flag {{ case.case_reference }} for review</h1>
+    <p class="muted">{{ status_badge(case.status) }} &nbsp;&middot;&nbsp; {{ case.incident_type }} &nbsp;&middot;&nbsp; Complainant: {{ case.complainant_name }}</p>
+  </div>
+</div>
+
+<section class="panel panel-flush" style="padding: 22px;">
+  <p class="muted small">
+    Raising a finding sends it to the CSC Supervisors for a response. Once a supervisor has
+    responded / investigated, it comes back to you (the auditor) to review the response and
+    close the finding, or send it back for a further response.
+  </p>
+
+  <form method="post" action="{{ url_for('auditor_flag_case', case_id=case.id) }}" class="form form-wide" novalidate>
+    {{ csrf() }}
+
+    <div class="field">
+      <label for="title">Finding title <span class="req" aria-hidden="true">*</span></label>
+      <input type="text" id="title" name="title" maxlength="150" value="{{ form.get('title', '') }}" required>
+    </div>
+
+    <div class="field">
+      <label for="severity">Severity <span class="req" aria-hidden="true">*</span></label>
+      <select id="severity" name="severity" required>
+        <option value="">Choose a severity</option>
+        {% for s in severities %}
+          <option value="{{ s }}" {% if form.get('severity', '') == s %}selected{% endif %}>{{ s }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="field">
+      <label for="description">Description of the finding <span class="req" aria-hidden="true">*</span></label>
+      <textarea id="description" name="description" rows="6" maxlength="3000" required>{{ form.get('description', '') }}</textarea>
+      <p class="hint">Describe the issue you found (at least 20 characters). This becomes part of the permanent audit trail.</p>
+    </div>
+
+    <div class="button-row">
+      <button type="submit" class="btn btn-gold btn-large">Raise finding</button>
+      <a class="btn btn-ghost btn-large" href="{{ url_for('auditor_case_detail', case_id=case.id) }}">Cancel</a>
+    </div>
+  </form>
+</section>
+{% endblock %}

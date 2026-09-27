@@ -1,0 +1,113 @@
+{# officer/case_detail.html - MODULE A: full case detail page with actions #}
+{% extends "base.html" %}
+{% from "_macros.html" import status_badge, escalated_badge, timeline, audit_table, csrf %}
+{% set layout = 'app' %}
+{% set active = 'cases' %}
+{% block title %}{{ case.case_reference }}{% endblock %}
+{% block page_title %}Case {{ case.case_reference }}{% endblock %}
+
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>{{ case.case_reference }}</h1>
+    <p class="muted">
+      {{ status_badge(case.status) }} {{ escalated_badge(case) }}
+      &nbsp;&middot;&nbsp; {{ case.incident_type }}
+      &nbsp;&middot;&nbsp; Last activity {{ case.last_activity_at|ago }}
+    </p>
+  </div>
+  <div class="button-row">
+    <a class="btn btn-primary" href="{{ url_for('officer_case_update', case_id=case.id) }}">Add progress update</a>
+    {% if not case.is_closed %}
+    <a class="btn btn-ghost" href="{{ url_for('officer_case_edit', case_id=case.id) }}">Correct details</a>
+    {% endif %}
+  </div>
+</div>
+
+{% if case.pending_escalation %}
+<div class="notice notice-warning">
+  <strong>This case is flagged for supervisor attention.</strong>
+  {{ case.pending_escalation.reason }} Add a progress update to show the case is moving again.
+</div>
+{% endif %}
+
+<div class="two-col two-col-wide">
+  <div>
+    <section class="panel" aria-labelledby="info-heading">
+      <h2 id="info-heading">Case information</h2>
+      <dl class="kv kv-grid">
+        <div><dt>Complainant</dt><dd>{{ case.complainant_name }}</dd></div>
+        <div><dt>E-mail</dt><dd>{{ case.complainant_email }}</dd></div>
+        <div><dt>Contact number</dt><dd>{{ case.complainant_phone or '-' }}</dd></div>
+        <div><dt>Incident date</dt><dd>{{ case.incident_date|longdate }}</dd></div>
+        <div><dt>Incident location</dt><dd>{{ case.incident_location }}</dd></div>
+        <div><dt>Incident type</dt><dd>{{ case.incident_type }}</dd></div>
+        <div><dt>Registered by</dt><dd>{{ case.registered_by.full_name }}</dd></div>
+        <div><dt>Assigned officer</dt><dd>{{ case.assigned_officer.full_name if case.assigned_officer else 'Not assigned' }}</dd></div>
+        <div><dt>Registered</dt><dd>{{ case.created_at|dt }}</dd></div>
+        <div><dt>Last updated</dt><dd>{{ case.updated_at|dt }}</dd></div>
+        {% if case.closed_at %}<div><dt>Closed</dt><dd>{{ case.closed_at|dt }}</dd></div>{% endif %}
+      </dl>
+
+      <details class="statement-box">
+        <summary>View statement / details of the report</summary>
+        <p class="statement-text">{{ case.statement }}</p>
+      </details>
+
+      <form method="post" action="{{ url_for('officer_case_resend', case_id=case.id) }}" class="inline-form">
+        {{ csrf() }}
+        <button type="submit" class="btn btn-small btn-ghost">Resend case reference e-mail</button>
+      </form>
+    </section>
+
+    <section class="panel" aria-labelledby="progress-heading">
+      <h2 id="progress-heading">Progress</h2>
+      {{ timeline(case.activities) }}
+    </section>
+
+    <section class="panel" aria-labelledby="audit-heading">
+      <h2 id="audit-heading">Audit history for this case</h2>
+      {{ audit_table(audit_entries, show_case=False) }}
+    </section>
+  </div>
+
+  <div>
+    <section class="panel" aria-labelledby="assign-heading">
+      <h2 id="assign-heading">Assign officer</h2>
+      {% if case.is_closed %}
+        <p class="empty">A closed case cannot be assigned. Re-open it first from the update page.</p>
+      {% else %}
+      <form method="post" action="{{ url_for('officer_case_assign', case_id=case.id) }}" class="form">
+        {{ csrf() }}
+        <div class="field">
+          <label for="officer_id">Officer</label>
+          <select id="officer_id" name="officer_id" required>
+            <option value="">Choose an officer</option>
+            {% for o in officers %}
+              <option value="{{ o.id }}" {% if case.assigned_officer_id == o.id %}selected{% endif %}>
+                {{ o.full_name }}{% if case.assigned_officer_id == o.id %} (currently assigned){% endif %}
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="field">
+          <label for="note">Note (optional)</label>
+          <textarea id="note" name="note" rows="2" maxlength="500"></textarea>
+        </div>
+        <button type="submit" class="btn btn-primary btn-block">Assign case</button>
+      </form>
+      {% endif %}
+    </section>
+
+    <section class="panel" aria-labelledby="status-heading">
+      <h2 id="status-heading">Status</h2>
+      <p>Current status: {{ status_badge(case.status) }}</p>
+      {% if next_statuses %}
+        <p class="muted small">To change the status, open <a href="{{ url_for('officer_case_update', case_id=case.id) }}">Add progress update</a> and choose a new status there, together with a note explaining the change.</p>
+      {% else %}
+        <p class="muted small">No further status change is available.</p>
+      {% endif %}
+    </section>
+  </div>
+</div>
+{% endblock %}
